@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { LngLatBoundsLike, Map } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { supabase } from '@/lib/supabaseClient'
+import { query as herokuQuery } from '@/lib/herokuDb'
 
 export type ChoroplethFeature = {
 	code: string
@@ -45,33 +45,24 @@ export default function MapView({ features, bounds, title, filters }: MapViewPro
 	const [data, setData] = useState<any[]>([])
 	const [loading, setLoading] = useState(false)
 
-	// Fetch data from Supabase
+	// Fetch data from Heroku Postgres
 	useEffect(() => {
 		async function fetchData() {
 			if (!filters) return
 			
 			setLoading(true)
 			try {
-				let query = supabase
-					.from('pollution_daily')
-					.select('sa2_code, sa2_name, ste_name, value, centroid_lat, centroid_lon')
-					.eq('pollutant', filters.pollutant)
-					.order('date', { ascending: false })
-					.limit(1000) // Limit for performance
-
+				const where = ['pollutant = $1']
+				const params: any[] = [filters.pollutant]
+				let idx = params.length
 				if (filters.codes) {
 					const codes = filters.codes.split(',').map(c => c.trim())
-					query = query.in('sa2_code', codes)
+					where.push(`sa2_code = ANY($${++idx})`)
+					params.push(codes)
 				}
-
-				const { data: pollutionData, error } = await query
-
-				if (error) {
-					console.error('Error fetching data:', error)
-					return
-				}
-
-				setData(pollutionData || [])
+				const sql = `select sa2_code, sa2_name, ste_name, value, centroid_lat, centroid_lon from pollution_daily where ${where.join(' AND ')} order by date desc limit 1000`
+				const { rows } = await herokuQuery(sql, params)
+				setData(rows || [])
 			} catch (error) {
 				console.error('Error:', error)
 			} finally {
