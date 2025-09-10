@@ -27,7 +27,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Australia Pollution Portal</h1>
-                <p className="text-sm text-blue-100">Real-time environmental monitoring & analysis</p>
+                <p className="text-sm text-blue-100">Historical environmental analysis (2018–2024)</p>
               </div>
             </div>
           </div>

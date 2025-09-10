@@ -24,6 +24,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          tailwind.config = {
+            theme: {
+              extend: {
+                colors: {
+                  brand: {
+                    500: '#3b82f6',
+                    600: '#2563eb',
+                    700: '#1d4ed8'
+                  }
+                }
+              }
+            }
+          }
+        ` }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
