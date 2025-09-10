@@ -6,10 +6,10 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start -p ${PORT:-3000}",
-    "heroku-postbuild": "next build --turbopack",
+    "heroku-postbuild": "next build",
     "lint": "eslint"
   },
   "dependencies": {
