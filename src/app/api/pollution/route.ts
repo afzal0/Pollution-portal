@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
 import dayjs from 'dayjs'
-import Papa from 'papaparse'
+import { query as herokuQuery } from '@/lib/herokuDb'
 
 export async function GET(req: NextRequest) {
 	const { searchParams } = new URL(req.url)
@@ -16,34 +15,27 @@ export async function GET(req: NextRequest) {
 	const startDate = start ? dayjs(start).format('YYYY-MM-DD') : undefined
 	const endDate = end ? dayjs(end).format('YYYY-MM-DD') : undefined
 
-	let viewName = 'pollution_daily_sa2'
-	if (level === 'SA3') viewName = 'pollution_daily_sa3'
-	if (level === 'SA4') viewName = 'pollution_daily_sa4'
-
-	let query = supabase.from(viewName).select('*').eq('pollutant', pollutant)
-	if (state) query = query.eq('ste_name', state)
+	const table = level === 'SA2' ? 'pollution_daily' : level === 'SA3' ? 'pollution_daily_sa3' : 'pollution_daily_sa4'
+	const whereClauses: string[] = ['pollutant = $1']
+	const params: any[] = [pollutant]
+	let idx = params.length
+	if (state) { whereClauses.push(`ste_name = $${++idx}`); params.push(state) }
 	if (saCodes && saCodes.length > 0) {
 		const column = level === 'SA2' ? 'sa2_code' : level === 'SA3' ? 'sa3_code' : 'sa4_code'
-		query = query.in(column, saCodes)
+		whereClauses.push(`${column} = ANY($${++idx})`); params.push(saCodes)
 	}
-	if (startDate) query = query.gte('date', startDate)
-	if (endDate) query = query.lte('date', endDate)
-	query = query.order('date', { ascending: true })
+	if (startDate) { whereClauses.push(`date >= $${++idx}`); params.push(startDate) }
+	if (endDate) { whereClauses.push(`date <= $${++idx}`); params.push(endDate) }
 
-	const { data, error } = await query
-	if (error) {
-		return NextResponse.json({ error: error.message }, { status: 500 })
-	}
+	const sql = `SELECT * FROM ${table} WHERE ${whereClauses.join(' AND ')} ORDER BY date ASC LIMIT 200000`
+	const { rows } = await herokuQuery(sql, params)
 
 	if (format === 'csv') {
-		const csv = Papa.unparse(data || [])
-		return new NextResponse(csv, {
-			headers: {
-				'Content-Type': 'text/csv',
-				'Content-Disposition': 'attachment; filename="pollution.csv"'
-			}
-		})
+		const columns = rows.length ? Object.keys(rows[0]) : ['pollutant','date','ste_name','sa2_code','sa2_name','centroid_lat','centroid_lon','value']
+		const esc = (v: any) => v === null || v === undefined ? '' : (typeof v === 'string' && (v.includes(',') || v.includes('"')) ? `"${v.replace(/"/g,'""')}"` : String(v))
+		const csv = [columns.join(',')].concat(rows.map(r => columns.map(c => esc((r as any)[c])).join(','))).join('\n')
+		return new NextResponse(csv, { headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="pollution.csv"' } })
 	}
 
-	return NextResponse.json({ data })
+	return NextResponse.json({ data: rows })
 }
