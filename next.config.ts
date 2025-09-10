@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     // Heroku build: skip type errors during build
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['pg'],
+  }
 };
 
 export default nextConfig;

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { LngLatBoundsLike, Map } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { query as herokuQuery } from '@/lib/herokuDb'
+// Client components should fetch via API route
 
 export type ChoroplethFeature = {
 	code: string
@@ -52,17 +52,11 @@ export default function MapView({ features, bounds, title, filters }: MapViewPro
 			
 			setLoading(true)
 			try {
-				const where = ['pollutant = $1']
-				const params: any[] = [filters.pollutant]
-				let idx = params.length
-				if (filters.codes) {
-					const codes = filters.codes.split(',').map(c => c.trim())
-					where.push(`sa2_code = ANY($${++idx})`)
-					params.push(codes)
-				}
-				const sql = `select sa2_code, sa2_name, ste_name, value, centroid_lat, centroid_lon from pollution_daily where ${where.join(' AND ')} order by date desc limit 1000`
-				const { rows } = await herokuQuery(sql, params)
-				setData(rows || [])
+				const params = new URLSearchParams({ pollutant: filters.pollutant, level: 'SA2' })
+				if (filters.codes) params.set('codes', filters.codes)
+				const res = await fetch(`/api/pollution?${params.toString()}`)
+				const json = await res.json()
+				setData(json.data || [])
 			} catch (error) {
 				console.error('Error:', error)
 			} finally {

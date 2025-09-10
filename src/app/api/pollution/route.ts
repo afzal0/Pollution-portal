@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import dayjs from 'dayjs'
 import { query as herokuQuery } from '@/lib/herokuDb'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
 	const { searchParams } = new URL(req.url)
 	const level = (searchParams.get('level') || 'SA2').toUpperCase() as 'SA2' | 'SA3' | 'SA4'
