@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
 	const end = searchParams.get('end') || undefined
 	const format = (searchParams.get('format') || 'json').toLowerCase()
 
-	const startDate = start ? dayjs(start).format('YYYY-MM-DD') : undefined
-	const endDate = end ? dayjs(end).format('YYYY-MM-DD') : undefined
+	let startDate = start ? dayjs(start).format('YYYY-MM-DD') : undefined
+	let endDate = end ? dayjs(end).format('YYYY-MM-DD') : undefined
 
 	const table = level === 'SA2' ? 'pollution_daily' : level === 'SA3' ? 'pollution_daily_sa3' : 'pollution_daily_sa4'
 	const whereClauses: string[] = ['pollutant = $1']
@@ -29,6 +29,22 @@ export async function GET(req: NextRequest) {
 	}
 	if (startDate) { whereClauses.push(`date >= $${++idx}`); params.push(startDate) }
 	if (endDate) { whereClauses.push(`date <= $${++idx}`); params.push(endDate) }
+
+	// If no explicit date range provided, default to the latest full month for this pollutant (and optional state)
+	if (!startDate && !endDate) {
+		let latestWhere = 'pollutant = $1'
+		const latestParams: any[] = [pollutant]
+		if (state) { latestWhere += ` AND ste_name = $2`; latestParams.push(state) }
+		const latestSql = `SELECT MAX(date) as latest_date FROM pollution_daily WHERE ${latestWhere}`
+		const { rows: latestRows } = await herokuQuery(latestSql, latestParams)
+		const latestDateVal = latestRows?.[0]?.latest_date ? dayjs(latestRows[0].latest_date) : undefined
+		if (latestDateVal) {
+			const monthStart = latestDateVal.startOf('month').format('YYYY-MM-DD')
+			const monthEnd = latestDateVal.endOf('month').format('YYYY-MM-DD')
+			whereClauses.push(`date >= $${++idx}`); params.push(monthStart)
+			whereClauses.push(`date <= $${++idx}`); params.push(monthEnd)
+		}
+	}
 
 	const sql = `SELECT * FROM ${table} WHERE ${whereClauses.join(' AND ')} ORDER BY date ASC LIMIT 200000`
 	const { rows } = await herokuQuery(sql, params)

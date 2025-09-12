@@ -10,7 +10,16 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "heroku-postbuild": "next build",
-    "lint": "eslint"
+    "lint": "eslint",
+    "data:clear": "node scripts/clear-database-aggressive.js",
+    "data:load": "node scripts/load-data-robust.js",
+    "data:load-fresh": "node scripts/load-data-robust.js --fresh",
+    "data:load-clear": "node scripts/load-data-robust.js --clear",
+    "data:load-heroku": "node scripts/load-data-heroku-robust.js",
+    "data:load-heroku-fresh": "node scripts/load-data-heroku-robust.js --fresh",
+    "data:load-heroku-clear": "node scripts/load-data-heroku-robust.js --clear",
+    "data:master": "node scripts/load-all-data-master.js",
+    "data:progress": "node scripts/load-all-data-master.js progress"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
