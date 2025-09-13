@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, Info, Settings, Menu } from 'lucide-react'
+import { Activity, Info, Menu } from 'lucide-react'
 import Link from 'next/link'
 
 interface HeaderProps {
@@ -32,21 +32,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm">Live Data</span>
-            </div>
-            
             <Link
               href="/about"
               className="p-2 rounded-lg hover:bg-white/10 transition-colors relative"
             >
               <Info className="w-5 h-5" />
             </Link>
-            
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <Settings className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
