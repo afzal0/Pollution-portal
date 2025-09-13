@@ -1,14 +1,13 @@
 "use client"
 
 import { Activity, Info, Settings, Menu } from 'lucide-react'
-import { useState } from 'react'
+import Link from 'next/link'
 
 interface HeaderProps {
   onMenuClick?: () => void
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
-  const [showInfo, setShowInfo] = useState(false)
 
   return (
     <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
@@ -38,12 +37,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <span className="text-sm">Live Data</span>
             </div>
             
-            <button
-              onClick={() => setShowInfo(!showInfo)}
+            <Link
+              href="/about"
               className="p-2 rounded-lg hover:bg-white/10 transition-colors relative"
             >
               <Info className="w-5 h-5" />
-            </button>
+            </Link>
             
             <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
               <Settings className="w-5 h-5" />
@@ -52,28 +51,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      {showInfo && (
-        <div className="absolute right-6 top-16 z-50 w-80 bg-white text-gray-800 rounded-lg shadow-xl p-4">
-          <h3 className="font-semibold mb-2">About This Portal</h3>
-          <p className="text-sm text-gray-600 mb-3">
-            Monitor air quality across Australia with real-time pollution data from Sentinel-5P satellite.
-          </p>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span>SA2, SA3, SA4 statistical areas</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>Multiple pollutant tracking</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full" />
-              <span>Historical trend analysis</span>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   )
 }
