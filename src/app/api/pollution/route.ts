@@ -78,25 +78,30 @@ export async function GET(req: NextRequest) {
 	} else {
 		// For aggregated data, we need to group by different time periods
 		let dateTrunc = ''
+		let dateField = 'date'
 		switch (aggregation) {
 			case 'weekly':
 				dateTrunc = "DATE_TRUNC('week', date) as period"
-				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'week\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				dateField = 'period'
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'week\', date), ste_name, sa2_code, sa2_name'
 				orderByClause = 'ORDER BY period DESC'
 				break
 			case 'monthly':
 				dateTrunc = "DATE_TRUNC('month', date) as period"
-				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'month\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				dateField = 'period'
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'month\', date), ste_name, sa2_code, sa2_name'
 				orderByClause = 'ORDER BY period DESC'
 				break
 			case 'quarterly':
 				dateTrunc = "DATE_TRUNC('quarter', date) as period"
-				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'quarter\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				dateField = 'period'
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'quarter\', date), ste_name, sa2_code, sa2_name'
 				orderByClause = 'ORDER BY period DESC'
 				break
 			case 'yearly':
 				dateTrunc = "DATE_TRUNC('year', date) as period"
-				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'year\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				dateField = 'period'
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'year\', date), ste_name, sa2_code, sa2_name'
 				orderByClause = 'ORDER BY period DESC'
 				break
 			case 'seasonal':
@@ -106,13 +111,14 @@ export async function GET(req: NextRequest) {
 					WHEN EXTRACT(MONTH FROM date) IN (6, 7, 8) THEN 'Winter'
 					WHEN EXTRACT(MONTH FROM date) IN (9, 10, 11) THEN 'Spring'
 				END as period, EXTRACT(YEAR FROM date) as year`
+				dateField = 'period'
 				groupByClause = `GROUP BY pollutant, 
 					CASE 
 						WHEN EXTRACT(MONTH FROM date) IN (12, 1, 2) THEN 'Summer'
 						WHEN EXTRACT(MONTH FROM date) IN (3, 4, 5) THEN 'Autumn'
 						WHEN EXTRACT(MONTH FROM date) IN (6, 7, 8) THEN 'Winter'
 						WHEN EXTRACT(MONTH FROM date) IN (9, 10, 11) THEN 'Spring'
-					END, EXTRACT(YEAR FROM date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon`
+					END, EXTRACT(YEAR FROM date), ste_name, sa2_code, sa2_name`
 				orderByClause = 'ORDER BY year DESC, period'
 				break
 		}

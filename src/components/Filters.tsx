@@ -41,8 +41,9 @@ export default function Filters({
   const [availablePollutants, setAvailablePollutants] = useState<string[]>([])
   const [availableStates, setAvailableStates] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [dateRange, setDateRange] = useState<{ minDate: string | null; maxDate: string | null }>({ minDate: null, maxDate: null })
 
-  // Fetch available pollutants and states
+  // Fetch available pollutants, states, and date range
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
@@ -60,6 +61,21 @@ export default function Filters({
         if (statesData.success) {
           setAvailableStates(statesData.data)
         }
+
+        // Fetch date range
+        const params = new URLSearchParams({
+          level: filters.level,
+          pollutants: filters.pollutants.join(',')
+        })
+        if (filters.states.length > 0) {
+          params.append('states', filters.states.join(','))
+        }
+        
+        const dateRangeResponse = await fetch(`/api/date-range?${params.toString()}`)
+        const dateRangeData = await dateRangeResponse.json()
+        if (dateRangeData.success) {
+          setDateRange(dateRangeData.data)
+        }
       } catch (error) {
         console.error('Error fetching filter options:', error)
       } finally {
@@ -68,7 +84,7 @@ export default function Filters({
     }
 
     fetchData()
-  }, [filters.level])
+  }, [filters.level, filters.pollutants, filters.states])
 
   function update<K extends keyof FiltersState>(key: K, value: FiltersState[K]) {
     const next = { ...filters, [key]: value }
@@ -292,31 +308,37 @@ export default function Filters({
         <label className="block text-sm font-medium text-gray-700 mb-2">Quick Date Ranges</label>
         <div className="flex flex-wrap gap-2">
           {[
+            { label: 'All Time', action: 'all' },
             { label: 'Last 7 days', days: 7 },
             { label: 'Last 30 days', days: 30 },
             { label: 'Last 90 days', days: 90 },
-            { label: 'Last year', days: 365 },
-            { label: 'All time', days: null }
+            { label: 'Last year', days: 365 }
           ].map(preset => (
             <button
               key={preset.label}
               onClick={() => {
-                if (preset.days === null) {
-                  update('start', '')
-                  update('end', '')
-                } else {
+                if (preset.action === 'all' && dateRange.minDate && dateRange.maxDate) {
+                  update('start', dateRange.minDate)
+                  update('end', dateRange.maxDate)
+                } else if (preset.days) {
                   const end = dayjs().format('YYYY-MM-DD')
                   const start = dayjs().subtract(preset.days, 'day').format('YYYY-MM-DD')
                   update('start', start)
                   update('end', end)
                 }
               }}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              disabled={preset.action === 'all' && (!dateRange.minDate || !dateRange.maxDate)}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {preset.label}
             </button>
           ))}
         </div>
+        {dateRange.minDate && dateRange.maxDate && (
+          <p className="text-xs text-gray-500 mt-2">
+            Data available from {dayjs(dateRange.minDate).format('MMM D, YYYY')} to {dayjs(dateRange.maxDate).format('MMM D, YYYY')}
+          </p>
+        )}
       </div>
 
       {/* Download Button */}

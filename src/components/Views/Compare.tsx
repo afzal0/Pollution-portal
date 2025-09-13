@@ -34,6 +34,42 @@ export default function Compare({ filters }: CompareProps) {
   const [showAddDataset, setShowAddDataset] = useState(false)
   const [newDatasetName, setNewDatasetName] = useState('')
   const [newDatasetDescription, setNewDatasetDescription] = useState('')
+  const [comparisonFilters, setComparisonFilters] = useState<{
+    pollutants: string[]
+    states: string[]
+    aggregation: string
+    start?: string
+    end?: string
+  }>({
+    pollutants: ['AER_AI'],
+    states: [],
+    aggregation: 'daily'
+  })
+  const [availablePollutants, setAvailablePollutants] = useState<string[]>([])
+  const [availableStates, setAvailableStates] = useState<string[]>([])
+
+  // Fetch available pollutants and states
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const pollutantsResponse = await fetch(`/api/pollutants?level=${filters.level}`)
+        const pollutantsData = await pollutantsResponse.json()
+        if (pollutantsData.success) {
+          setAvailablePollutants(pollutantsData.data)
+        }
+
+        const statesResponse = await fetch(`/api/states?level=${filters.level}`)
+        const statesData = await statesResponse.json()
+        if (statesData.success) {
+          setAvailableStates(statesData.data)
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error)
+      }
+    }
+
+    fetchFilters()
+  }, [filters.level])
 
   const addDataset = () => {
     if (!newDatasetName.trim()) return
@@ -42,7 +78,14 @@ export default function Compare({ filters }: CompareProps) {
       id: `dataset_${Date.now()}`,
       name: newDatasetName.trim(),
       description: newDatasetDescription.trim(),
-      filters: { ...filters },
+      filters: { 
+        ...filters,
+        pollutants: comparisonFilters.pollutants,
+        states: comparisonFilters.states,
+        aggregation: comparisonFilters.aggregation,
+        start: comparisonFilters.start,
+        end: comparisonFilters.end
+      },
       data: [],
       color: `hsl(${datasets.length * 60}, 70%, 50%)`,
       isActive: true
@@ -345,12 +388,111 @@ export default function Compare({ filters }: CompareProps) {
                 />
               </div>
               
-              <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium mb-1">Current Filters:</p>
-                <p>Pollutants: {filters.pollutants?.join(', ') || filters.pollutant || 'None'}</p>
-                <p>States: {filters.states?.join(', ') || 'All'}</p>
-                <p>Level: {filters.level}</p>
-                <p>Aggregation: {filters.aggregation || 'daily'}</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pollutants for Comparison
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    {availablePollutants.map(pollutant => (
+                      <label key={pollutant} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={comparisonFilters.pollutants.includes(pollutant)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setComparisonFilters(prev => ({
+                                ...prev,
+                                pollutants: [...prev.pollutants, pollutant]
+                              }))
+                            } else {
+                              setComparisonFilters(prev => ({
+                                ...prev,
+                                pollutants: prev.pollutants.filter(p => p !== pollutant)
+                              }))
+                            }
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">{pollutant}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    States for Comparison
+                  </label>
+                  <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                    {availableStates.map(state => (
+                      <label key={state} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={comparisonFilters.states.includes(state)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setComparisonFilters(prev => ({
+                                ...prev,
+                                states: [...prev.states, state]
+                              }))
+                            } else {
+                              setComparisonFilters(prev => ({
+                                ...prev,
+                                states: prev.states.filter(s => s !== state)
+                              }))
+                            }
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">{state}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data Aggregation
+                  </label>
+                  <select
+                    value={comparisonFilters.aggregation}
+                    onChange={(e) => setComparisonFilters(prev => ({ ...prev, aggregation: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="daily">Daily (Raw Data)</option>
+                    <option value="weekly">Weekly Average</option>
+                    <option value="monthly">Monthly Average</option>
+                    <option value="quarterly">Quarterly Average</option>
+                    <option value="yearly">Yearly Average</option>
+                    <option value="seasonal">Seasonal Average</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={comparisonFilters.start || ''}
+                      onChange={(e) => setComparisonFilters(prev => ({ ...prev, start: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={comparisonFilters.end || ''}
+                      onChange={(e) => setComparisonFilters(prev => ({ ...prev, end: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             

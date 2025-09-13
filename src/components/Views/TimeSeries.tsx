@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts'
-import { Calendar, TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import { Calendar, TrendingUp, TrendingDown, Activity, Download } from 'lucide-react'
 import { POLLUTANTS } from '@/lib/constants'
 import dayjs from 'dayjs'
 import LoadingBar from '@/components/LoadingBar'
@@ -28,6 +28,7 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
     currentPollutant: '',
     isLoading: false
   })
+  const [chartRef, setChartRef] = useState<any>(null)
 
   useEffect(() => {
     fetchData()
@@ -168,6 +169,59 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
     return p?.color || '#666'
   }
 
+  const downloadChart = () => {
+    if (!chartRef) return
+    
+    const svg = chartRef.querySelector('svg')
+    if (!svg) return
+
+    const svgData = new XMLSerializer().serializeToString(svg)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const img = new Image()
+    
+    img.onload = () => {
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx?.drawImage(img, 0, 0)
+      
+      const link = document.createElement('a')
+      link.download = `timeseries_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    }
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+  }
+
+  const downloadData = async () => {
+    try {
+      const pollutants = filters.pollutants || [filters.pollutant || 'AER_AI']
+      const params = new URLSearchParams({
+        pollutants: pollutants.join(','),
+        level: filters.level || 'SA2',
+        aggregation: filters.aggregation || 'daily',
+        format: 'csv'
+      })
+      
+      if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
+      if (filters.codes) params.append('codes', filters.codes)
+      if (filters.start) params.append('start', filters.start)
+      if (filters.end) params.append('end', filters.end)
+
+      const response = await fetch(`/api/pollution?${params.toString()}`)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `timeseries_data_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading data:', error)
+    }
+  }
+
   const ChartComponent = chartType === 'area' ? AreaChart : LineChart
   const DataComponent = chartType === 'area' ? Area : Line
 
@@ -227,6 +281,24 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
                 Area
               </button>
             </div>
+
+            {/* Download Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={downloadChart}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Chart
+              </button>
+              <button
+                onClick={downloadData}
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Data
+              </button>
+            </div>
           </div>
         </div>
 
@@ -278,7 +350,7 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
       </div>
 
       {/* Chart */}
-      <div className="flex-1 p-4">
+      <div ref={setChartRef} className="flex-1 p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
