@@ -96,243 +96,237 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     map.addControl(new maplibregl.ScaleControl(), 'bottom-right')
 
-    map.on('load', () => setReady(true))
+    map.on('load', () => {
+      setReady(true)
+      console.log('Map loaded and ready')
+    })
 
     return () => map.remove()
   }, [])
 
+  // Add data layers when map is ready and data changes
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !ready) return
-
-    // Update map style
-    const styleUrl = MAP_STYLES.find(s => s.value === mapStyle)?.url
-    if (styleUrl && map.getStyle().name !== mapStyle) {
-      map.setStyle(styleUrl)
-      map.once('styledata', () => {
-        // Re-add sources and layers after style change
-        addDataLayers()
-      })
-    } else {
-      addDataLayers()
+    if (!map || !ready || geojson.features.length === 0) {
+      console.log('Map not ready or no data:', { ready, features: geojson.features.length })
+      return
     }
 
-    function addDataLayers() {
-      // Remove existing layers and sources
-      if (map.getLayer('pollution-heatmap')) map.removeLayer('pollution-heatmap')
-      if (map.getLayer('pollution-circles')) map.removeLayer('pollution-circles')
-      if (map.getLayer('pollution-clusters')) map.removeLayer('pollution-clusters')
-      if (map.getLayer('pollution-cluster-count')) map.removeLayer('pollution-cluster-count')
-      if (map.getSource('pollution-data')) map.removeSource('pollution-data')
+    console.log(`Adding ${geojson.features.length} features to map`)
 
-      if (geojson.features.length === 0) {
-        console.log('No data to display on map')
-        return
-      }
+    // Remove existing layers and sources
+    if (map.getLayer('pollution-heatmap')) map.removeLayer('pollution-heatmap')
+    if (map.getLayer('pollution-circles')) map.removeLayer('pollution-circles')
+    if (map.getLayer('pollution-clusters')) map.removeLayer('pollution-clusters')
+    if (map.getLayer('pollution-cluster-count')) map.removeLayer('pollution-cluster-count')
+    if (map.getSource('pollution-data')) map.removeSource('pollution-data')
 
-      console.log(`Adding ${geojson.features.length} features to map`)
+    // Add source
+    map.addSource('pollution-data', {
+      type: 'geojson',
+      data: geojson,
+      cluster: visualization === 'clusters',
+      clusterMaxZoom: 14,
+      clusterRadius: 50
+    })
 
-      // Add source
-      map.addSource('pollution-data', {
-        type: 'geojson',
-        data: geojson,
-        cluster: visualization === 'clusters',
-        clusterMaxZoom: 14,
-        clusterRadius: 50
-      })
-
-      if (visualization === 'heatmap') {
-        // Heatmap layer
-        map.addLayer({
-          id: 'pollution-heatmap',
-          type: 'heatmap',
-          source: 'pollution-data',
-          paint: {
-            'heatmap-weight': [
-              'interpolate',
-              ['linear'],
-              ['get', 'value'],
-              -2, 0,
-              0, 0.2,
-              2, 0.6,
-              4, 1
-            ],
-            'heatmap-intensity': {
-              stops: [
-                [11, 1],
-                [15, 3]
-              ]
-            },
-            'heatmap-color': [
-              'interpolate',
-              ['linear'],
-              ['heatmap-density'],
-              0, 'rgba(33,102,172,0)',
-              0.2, 'rgb(103,169,207)',
-              0.4, 'rgb(209,229,240)',
-              0.6, 'rgb(253,219,199)',
-              0.8, 'rgb(239,138,98)',
-              1, 'rgb(178,24,43)'
-            ],
-            'heatmap-radius': {
-              stops: [
-                [11, 15],
-                [15, 20]
-              ]
-            },
-            'heatmap-opacity': 0.8
-          }
-        })
-      } else if (visualization === 'clusters') {
-        // Clusters layer
-        map.addLayer({
-          id: 'pollution-clusters',
-          type: 'circle',
-          source: 'pollution-data',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': [
-              'step',
-              ['get', 'point_count'],
-              '#51bbd6',
-              10, '#f1f075',
-              30, '#f28cb1'
-            ],
-            'circle-radius': [
-              'step',
-              ['get', 'point_count'],
-              20, 10,
-              30, 30,
-              40
+    // Add layers based on visualization type
+    if (visualization === 'heatmap') {
+      // Heatmap layer
+      map.addLayer({
+        id: 'pollution-heatmap',
+        type: 'heatmap',
+        source: 'pollution-data',
+        paint: {
+          'heatmap-weight': [
+            'interpolate',
+            ['linear'],
+            ['get', 'value'],
+            -2, 0,
+            0, 0.2,
+            2, 0.6,
+            4, 1
+          ],
+          'heatmap-intensity': {
+            stops: [
+              [11, 1],
+              [15, 3]
             ]
-          }
-        })
-
-        map.addLayer({
-          id: 'pollution-cluster-count',
-          type: 'symbol',
-          source: 'pollution-data',
-          filter: ['has', 'point_count'],
-          layout: {
-            'text-field': '{point_count_abbreviated}',
-            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-            'text-size': 12
           },
-          paint: {
-            'text-color': '#ffffff'
-          }
-        })
-
-        // Unclustered points
-        map.addLayer({
-          id: 'pollution-circles',
-          type: 'circle',
-          source: 'pollution-data',
-          filter: ['!', ['has', 'point_count']],
-          paint: {
-            'circle-color': [
-              'interpolate',
-              ['linear'],
-              ['get', 'value'],
-              ...COLOR_SCALES.pollution.flatMap(s => [s.value, s.color])
-            ],
-            'circle-radius': 6,
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff',
-            'circle-opacity': 0.9
-          }
-        })
-      } else {
-        // Points visualization with pollutant-based colors
-        map.addLayer({
-          id: 'pollution-circles',
-          type: 'circle',
-          source: 'pollution-data',
-          paint: {
-            'circle-color': [
-              'case',
-              ['==', ['get', 'pollutant'], 'AER_AI'], '#facc15',
-              ['==', ['get', 'pollutant'], 'AER_LH'], '#f87171',
-              ['==', ['get', 'pollutant'], 'CO'], '#a3a3a3',
-              ['==', ['get', 'pollutant'], 'HCHO'], '#c084fc',
-              ['==', ['get', 'pollutant'], 'CLOUD'], '#38bdf8',
-              ['==', ['get', 'pollutant'], 'O3_TCL'], '#4ade80',
-              '#666666' // default color
-            ],
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['get', 'value'],
-              -2, 4,
-              4, 14
-            ],
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff',
-            'circle-opacity': 0.8
-          }
-        })
-      }
-
-      // Add interactivity
-      const interactiveLayer = visualization === 'clusters' ? 'pollution-circles' : 'pollution-circles'
-      
-      map.on('mouseenter', interactiveLayer, () => {
-        map.getCanvas().style.cursor = 'pointer'
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(33,102,172,0)',
+            0.2, 'rgb(103,169,207)',
+            0.4, 'rgb(209,229,240)',
+            0.6, 'rgb(253,219,199)',
+            0.8, 'rgb(239,138,98)',
+            1, 'rgb(178,24,43)'
+          ],
+          'heatmap-radius': {
+            stops: [
+              [11, 15],
+              [15, 20]
+            ]
+          },
+          'heatmap-opacity': 0.8
+        }
       })
-
-      map.on('mouseleave', interactiveLayer, () => {
-        map.getCanvas().style.cursor = ''
-      })
-
-      map.on('click', interactiveLayer, (e) => {
-        if (e.features && e.features[0]) {
-          const feature = e.features[0]
-          const props = feature.properties
-          
-          new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="p-3 min-w-[200px]">
-                <h3 class="font-semibold text-gray-900 mb-2">${props.name}</h3>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">State:</span>
-                    <span class="font-medium">${props.state}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">SA2 Code:</span>
-                    <span class="font-medium">${props.code}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Pollutant:</span>
-                    <span class="font-medium">${props.pollutant}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Value:</span>
-                    <span class="font-medium">${props.value?.toFixed(6)}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Date:</span>
-                    <span class="font-medium">${new Date(props.date).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </div>
-            `)
-            .addTo(map)
+    } else if (visualization === 'clusters') {
+      // Clusters layer
+      map.addLayer({
+        id: 'pollution-clusters',
+        type: 'circle',
+        source: 'pollution-data',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',
+            10, '#f1f075',
+            30, '#f28cb1'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20, 10,
+            30, 30,
+            40
+          ]
         }
       })
 
-      // Fit bounds if we have data
-      if (geojson.features.length > 0) {
-        const bounds = new maplibregl.LngLatBounds()
-        geojson.features.forEach(feature => {
-          if (feature.geometry.type === 'Point') {
-            bounds.extend(feature.geometry.coordinates as [number, number])
-          }
-        })
-        map.fitBounds(bounds, { padding: 50, maxZoom: 10 })
-      }
+      map.addLayer({
+        id: 'pollution-cluster-count',
+        type: 'symbol',
+        source: 'pollution-data',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        },
+        paint: {
+          'text-color': '#ffffff'
+        }
+      })
+
+      // Unclustered points
+      map.addLayer({
+        id: 'pollution-circles',
+        type: 'circle',
+        source: 'pollution-data',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': [
+            'case',
+            ['==', ['get', 'pollutant'], 'AER_AI'], '#facc15',
+            ['==', ['get', 'pollutant'], 'AER_LH'], '#f87171',
+            ['==', ['get', 'pollutant'], 'CO'], '#a3a3a3',
+            ['==', ['get', 'pollutant'], 'HCHO'], '#c084fc',
+            ['==', ['get', 'pollutant'], 'CLOUD'], '#38bdf8',
+            ['==', ['get', 'pollutant'], 'O3_TCL'], '#4ade80',
+            '#666666' // default color
+          ],
+          'circle-radius': 6,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.9
+        }
+      })
+    } else {
+      // Points visualization with pollutant-based colors
+      map.addLayer({
+        id: 'pollution-circles',
+        type: 'circle',
+        source: 'pollution-data',
+        paint: {
+          'circle-color': [
+            'case',
+            ['==', ['get', 'pollutant'], 'AER_AI'], '#facc15',
+            ['==', ['get', 'pollutant'], 'AER_LH'], '#f87171',
+            ['==', ['get', 'pollutant'], 'CO'], '#a3a3a3',
+            ['==', ['get', 'pollutant'], 'HCHO'], '#c084fc',
+            ['==', ['get', 'pollutant'], 'CLOUD'], '#38bdf8',
+            ['==', ['get', 'pollutant'], 'O3_TCL'], '#4ade80',
+            '#666666' // default color
+          ],
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['get', 'value'],
+            -2, 4,
+            4, 14
+          ],
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.8
+        }
+      })
     }
+
+    // Add interactivity
+    const interactiveLayer = visualization === 'clusters' ? 'pollution-circles' : 'pollution-circles'
+    
+    map.on('mouseenter', interactiveLayer, () => {
+      map.getCanvas().style.cursor = 'pointer'
+    })
+
+    map.on('mouseleave', interactiveLayer, () => {
+      map.getCanvas().style.cursor = ''
+    })
+
+    map.on('click', interactiveLayer, (e) => {
+      if (e.features && e.features[0]) {
+        const feature = e.features[0]
+        const props = feature.properties
+        
+        new maplibregl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div class="p-3 min-w-[200px]">
+              <h3 class="font-semibold text-gray-900 mb-2">${props.name}</h3>
+              <div class="space-y-1 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">State:</span>
+                  <span class="font-medium">${props.state}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">SA2 Code:</span>
+                  <span class="font-medium">${props.code}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Pollutant:</span>
+                  <span class="font-medium">${props.pollutant}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Value:</span>
+                  <span class="font-medium">${props.value?.toFixed(6)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Date:</span>
+                  <span class="font-medium">${new Date(props.date).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+          `)
+          .addTo(map)
+      }
+    })
+
+    // Fit bounds if we have data
+    if (geojson.features.length > 0) {
+      const bounds = new maplibregl.LngLatBounds()
+      geojson.features.forEach(feature => {
+        if (feature.geometry.type === 'Point') {
+          bounds.extend(feature.geometry.coordinates as [number, number])
+        }
+      })
+      map.fitBounds(bounds, { padding: 50, maxZoom: 10 })
+    }
+
   }, [ready, geojson, mapStyle, visualization])
 
   return (
