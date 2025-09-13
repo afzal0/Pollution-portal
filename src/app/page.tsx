@@ -31,7 +31,8 @@ export default function Home() {
     states: [],
     level: 'SA2',
     codes: '',
-    customArea: 'none'
+    customArea: 'none',
+    aggregation: 'daily'
   })
   const [mapRef, setMapRef] = useState<any>(null)
   const [showPolygonDrawer, setShowPolygonDrawer] = useState(false)

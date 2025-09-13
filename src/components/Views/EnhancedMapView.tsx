@@ -48,10 +48,11 @@ export default function EnhancedMapView({ filters, onMapReady }: EnhancedMapView
         // First, get total count for progress tracking
         let totalRecords = 0
         // Single API call for all pollutants
-        const params = new URLSearchParams({
-          pollutants: pollutants.join(','),
-          level: filters.level || 'SA2',
-        })
+            const params = new URLSearchParams({
+              pollutants: pollutants.join(','),
+              level: filters.level || 'SA2',
+              aggregation: filters.aggregation || 'daily'
+            })
         
         if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
         if (filters.codes) params.append('codes', filters.codes)

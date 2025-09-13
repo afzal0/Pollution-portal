@@ -13,6 +13,7 @@ export type FiltersState = {
   end?: string
   polygon?: number[][]
   customArea?: 'none' | 'polygon' | 'shapefile' | 'coordinates'
+  aggregation?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'seasonal'
 }
 
 interface FiltersProps {
@@ -33,7 +34,8 @@ export default function Filters({
     states: [],
     level: 'SA2',
     codes: '',
-    customArea: 'none'
+    customArea: 'none',
+    aggregation: 'daily'
   })
 
   const [availablePollutants, setAvailablePollutants] = useState<string[]>([])
@@ -169,6 +171,31 @@ export default function Filters({
           <option value="SA3">SA3 (Statistical Area Level 3)</option>
           <option value="SA4">SA4 (Statistical Area Level 4)</option>
         </select>
+      </div>
+
+      {/* Data Aggregation */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Data Aggregation</label>
+        <select 
+          className="w-full border rounded-md px-3 py-2" 
+          value={filters.aggregation || 'daily'}
+          onChange={e => update('aggregation', e.target.value as any)}
+        >
+          <option value="daily">Daily (Raw Data)</option>
+          <option value="weekly">Weekly Average</option>
+          <option value="monthly">Monthly Average</option>
+          <option value="quarterly">Quarterly Average</option>
+          <option value="yearly">Yearly Average</option>
+          <option value="seasonal">Seasonal Average</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          {filters.aggregation === 'daily' && 'Shows individual daily observations'}
+          {filters.aggregation === 'weekly' && 'Averages data by week (Monday-Sunday)'}
+          {filters.aggregation === 'monthly' && 'Averages data by calendar month'}
+          {filters.aggregation === 'quarterly' && 'Averages data by quarter (Q1-Q4)'}
+          {filters.aggregation === 'yearly' && 'Averages data by calendar year'}
+          {filters.aggregation === 'seasonal' && 'Averages data by season (Summer, Autumn, Winter, Spring)'}
+        </p>
       </div>
 
       {/* Custom Area Selection */}

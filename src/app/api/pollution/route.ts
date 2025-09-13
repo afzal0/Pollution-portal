@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
 	const saCodes = searchParams.get('codes')?.split(',').filter(Boolean)
 	const start = searchParams.get('start') || undefined
 	const end = searchParams.get('end') || undefined
+	const aggregation = searchParams.get('aggregation') || 'daily'
 	const format = (searchParams.get('format') || 'json').toLowerCase()
 
 	let startDate = start ? dayjs(start).format('YYYY-MM-DD') : undefined
@@ -63,12 +64,69 @@ export async function GET(req: NextRequest) {
 		}
 	}
 
-	// Optimized query with better indexing and limits
-	const sql = `SELECT pollutant, date, ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon, value 
-		FROM ${table} 
-		WHERE ${whereClauses.join(' AND ')} 
-		ORDER BY date DESC 
-		LIMIT 50000`
+	// Build aggregation query based on aggregation type
+	let sql: string
+	let groupByClause = ''
+	let orderByClause = 'ORDER BY date DESC'
+	
+	if (aggregation === 'daily') {
+		sql = `SELECT pollutant, date, ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon, value 
+			FROM ${table} 
+			WHERE ${whereClauses.join(' AND ')} 
+			ORDER BY date DESC 
+			LIMIT 50000`
+	} else {
+		// For aggregated data, we need to group by different time periods
+		let dateTrunc = ''
+		switch (aggregation) {
+			case 'weekly':
+				dateTrunc = "DATE_TRUNC('week', date) as period"
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'week\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				orderByClause = 'ORDER BY period DESC'
+				break
+			case 'monthly':
+				dateTrunc = "DATE_TRUNC('month', date) as period"
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'month\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				orderByClause = 'ORDER BY period DESC'
+				break
+			case 'quarterly':
+				dateTrunc = "DATE_TRUNC('quarter', date) as period"
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'quarter\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				orderByClause = 'ORDER BY period DESC'
+				break
+			case 'yearly':
+				dateTrunc = "DATE_TRUNC('year', date) as period"
+				groupByClause = 'GROUP BY pollutant, DATE_TRUNC(\'year\', date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon'
+				orderByClause = 'ORDER BY period DESC'
+				break
+			case 'seasonal':
+				dateTrunc = `CASE 
+					WHEN EXTRACT(MONTH FROM date) IN (12, 1, 2) THEN 'Summer'
+					WHEN EXTRACT(MONTH FROM date) IN (3, 4, 5) THEN 'Autumn'
+					WHEN EXTRACT(MONTH FROM date) IN (6, 7, 8) THEN 'Winter'
+					WHEN EXTRACT(MONTH FROM date) IN (9, 10, 11) THEN 'Spring'
+				END as period, EXTRACT(YEAR FROM date) as year`
+				groupByClause = `GROUP BY pollutant, 
+					CASE 
+						WHEN EXTRACT(MONTH FROM date) IN (12, 1, 2) THEN 'Summer'
+						WHEN EXTRACT(MONTH FROM date) IN (3, 4, 5) THEN 'Autumn'
+						WHEN EXTRACT(MONTH FROM date) IN (6, 7, 8) THEN 'Winter'
+						WHEN EXTRACT(MONTH FROM date) IN (9, 10, 11) THEN 'Spring'
+					END, EXTRACT(YEAR FROM date), ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon`
+				orderByClause = 'ORDER BY year DESC, period'
+				break
+		}
+		
+		sql = `SELECT pollutant, ${dateTrunc}, ste_name, sa2_code, sa2_name, 
+			AVG(centroid_lat) as centroid_lat, AVG(centroid_lon) as centroid_lon, 
+			AVG(value) as value, COUNT(*) as record_count
+			FROM ${table} 
+			WHERE ${whereClauses.join(' AND ')} 
+			${groupByClause}
+			${orderByClause}
+			LIMIT 50000`
+	}
+	
 	const { rows } = await herokuQuery(sql, params)
 
 	if (format === 'csv') {

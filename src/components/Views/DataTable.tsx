@@ -28,6 +28,7 @@ export default function DataTable({ filters }: DataTableProps) {
       const params = new URLSearchParams({
         pollutants: pollutants.join(','),
         level: filters.level || 'SA2',
+        aggregation: filters.aggregation || 'daily'
       })
       
       if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
