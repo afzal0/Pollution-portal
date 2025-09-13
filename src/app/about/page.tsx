@@ -143,15 +143,19 @@ export default function About() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">Data Sources & Acknowledgments</h2>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                       <div className="flex items-start gap-3">
-                        <Info className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <h3 className="text-lg font-semibold text-yellow-900 mb-2">Important Notice</h3>
-                          <p className="text-yellow-800 text-sm leading-relaxed">
-                            This application uses data downloaded from Google Earth Engine, which belongs to 
-                            Copernicus satellite data. The sole purpose of this application is to use this 
-                            data for research purposes. It is not intended for commercial use.
+                          <h3 className="text-lg font-semibold text-blue-900 mb-2">Data Attribution</h3>
+                          <p className="text-blue-800 text-sm leading-relaxed mb-3">
+                            Contains modified Copernicus Sentinel and CAMS data (2025), processed via Google Earth Engine. 
+                            © European Union, Copernicus Programme.
+                          </p>
+                          <p className="text-blue-800 text-sm leading-relaxed">
+                            This application uses data from the Copernicus Programme (Sentinel satellites and Copernicus 
+                            Atmosphere Monitoring Service – CAMS), accessed and processed via Google Earth Engine. 
+                            The European Union's Copernicus Programme provides these datasets under its free and open data policy.
                           </p>
                         </div>
                       </div>
@@ -225,18 +229,18 @@ export default function About() {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
                       <div className="flex items-start gap-3">
-                        <Shield className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                        <Shield className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <h3 className="text-lg font-semibold text-red-900 mb-2">Important Legal Notice</h3>
-                          <p className="text-red-800 text-sm leading-relaxed mb-3">
-                            If publishing this data breaches any rules or regulations, please contact the developer 
-                            immediately to take it down. This application is intended solely for research purposes 
-                            and is not meant for commercial use.
+                          <h3 className="text-lg font-semibold text-green-900 mb-2">Copernicus Open Data Policy</h3>
+                          <p className="text-green-800 text-sm leading-relaxed mb-3">
+                            This application uses data from the Copernicus Programme under its free and open data policy. 
+                            You can download, use, modify, and redistribute the data for research, education, commercial, 
+                            or non-commercial purposes without fees or royalties.
                           </p>
-                          <div className="bg-white border border-red-200 rounded p-3">
-                            <p className="text-red-700 text-sm font-medium">
+                          <div className="bg-white border border-green-200 rounded p-3">
+                            <p className="text-green-700 text-sm font-medium">
                               Contact: Afzal Khan - fzlkhan0@gmail.com
                             </p>
                           </div>
@@ -248,20 +252,24 @@ export default function About() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms of Use</h3>
                       <div className="space-y-4 text-sm text-gray-600">
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-1">Research Use Only</h4>
-                          <p>This platform is designed exclusively for academic and research purposes. Commercial use is strictly prohibited.</p>
+                          <h4 className="font-medium text-gray-900 mb-1">Open Data Usage</h4>
+                          <p>This platform uses Copernicus data under its free and open data policy. Data can be used for research, education, commercial, or non-commercial purposes.</p>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-1">Data Attribution</h4>
-                          <p>Users must properly attribute data sources (Google Earth Engine, Copernicus) in any publications or research outputs.</p>
+                          <h4 className="font-medium text-gray-900 mb-1">Required Attribution</h4>
+                          <p>Users must properly attribute data sources: "Contains modified Copernicus Sentinel and CAMS data (2025), processed via Google Earth Engine. © European Union, Copernicus Programme."</p>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-1">Open Source</h4>
+                          <h4 className="font-medium text-gray-900 mb-1">Data Modification Notice</h4>
+                          <p>Since the data has been processed and aggregated, users must indicate that the data were modified from the original Copernicus datasets.</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-1">No Endorsement</h4>
+                          <p>This application does not suggest endorsement by the European Union, ESA, ECMWF, or Google. All interpretations are solely those of the authors.</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-1">Open Source Platform</h4>
                           <p>This project is open source and available under the MIT License. Feel free to contribute and improve the platform.</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 mb-1">No Warranty</h4>
-                          <p>The data is provided "as is" without any warranty. Users are responsible for validating data accuracy for their specific use cases.</p>
                         </div>
                       </div>
                     </div>
@@ -453,6 +461,16 @@ export default function About() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Footer Attribution */}
+      <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-xs text-gray-500 text-center">
+            Contains modified Copernicus Sentinel and CAMS data (2025), processed via Google Earth Engine. 
+            © European Union, Copernicus Programme.
+          </p>
         </div>
       </div>
     </div>

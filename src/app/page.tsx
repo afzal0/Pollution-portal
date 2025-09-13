@@ -217,6 +217,16 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Footer Attribution */}
+      <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-xs text-gray-500 text-center">
+            Contains modified Copernicus Sentinel and CAMS data (2025), processed via Google Earth Engine. 
+            © European Union, Copernicus Programme.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
