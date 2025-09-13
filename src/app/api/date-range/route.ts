@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
     const whereClauses: string[] = ['pollutant = ANY($1)']
     const params: any[] = [pollutants]
-    let idx = params.length
+    let idx = 1
 
     if (states.length > 0) {
       whereClauses.push(`ste_name = ANY($${++idx})`)
