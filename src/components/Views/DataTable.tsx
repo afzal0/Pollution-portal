@@ -24,15 +24,16 @@ export default function DataTable({ filters }: DataTableProps) {
   const fetchData = async () => {
     setLoading(true)
     try {
+      const pollutants = filters.pollutants || [filters.pollutant || 'AER_AI']
       const params = new URLSearchParams({
-        pollutant: filters.pollutant || 'SO2',
+        pollutants: pollutants.join(','),
         level: filters.level || 'SA2',
       })
       
-      if (filters.state) params.append('state', filters.state)
+      if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
       if (filters.codes) params.append('codes', filters.codes)
-      if (filters.startDate) params.append('start', filters.startDate)
-      if (filters.endDate) params.append('end', filters.endDate)
+      if (filters.start) params.append('start', filters.start)
+      if (filters.end) params.append('end', filters.end)
 
       const response = await fetch(`/api/pollution?${params.toString()}`)
       const result = await response.json()

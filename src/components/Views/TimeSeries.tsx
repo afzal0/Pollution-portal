@@ -55,6 +55,7 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
       
       if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
       if (filters.codes) params.append('codes', filters.codes)
+      // Only add date filters if they exist - if not, API will return latest month by default
       if (filters.start) params.append('start', filters.start)
       if (filters.end) params.append('end', filters.end)
 

@@ -6,6 +6,8 @@ import Sidebar from '@/components/Layout/Sidebar'
 import EnhancedMapView from '@/components/Views/EnhancedMapView'
 import DataTable from '@/components/Views/DataTable'
 import TimeSeries from '@/components/Views/TimeSeries'
+import Statistics from '@/components/Views/Statistics'
+import Compare from '@/components/Views/Compare'
 import PolygonDrawer from '@/components/PolygonDrawer'
 import ShapefileUploader from '@/components/ShapefileUploader'
 import CoordinateInput from '@/components/CoordinateInput'
@@ -205,23 +207,11 @@ export default function Home() {
             )}
             
             {activeTab === 'statistics' && (
-              <div className="h-full bg-white rounded-lg shadow-sm p-6">
-                <div className="text-center text-gray-500">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Statistics View</h3>
-                  <p className="text-sm">Statistical analysis and insights coming soon</p>
-                </div>
-              </div>
+              <Statistics filters={filters} />
             )}
             
             {activeTab === 'compare' && (
-              <div className="h-full bg-white rounded-lg shadow-sm p-6">
-                <div className="text-center text-gray-500">
-                  <GitCompare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Comparison View</h3>
-                  <p className="text-sm">Compare different regions and time periods coming soon</p>
-                </div>
-              </div>
+              <Compare filters={filters} />
             )}
           </div>
         </div>
