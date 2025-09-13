@@ -9,9 +9,10 @@ import LoadingBar from '@/components/LoadingBar'
 
 interface EnhancedMapViewProps {
   filters: any
+  onMapReady?: (map: any) => void
 }
 
-export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
+export default function EnhancedMapView({ filters, onMapReady }: EnhancedMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
   const [ready, setReady] = useState(false)
@@ -46,54 +47,34 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
         
         // First, get total count for progress tracking
         let totalRecords = 0
-        for (const pollutant of pollutants) {
-          const params = new URLSearchParams({
-            pollutant: pollutant,
-            level: filters.level || 'SA2',
-          })
-          
-          if (filters.state) params.append('state', filters.state)
-          if (filters.codes) params.append('codes', filters.codes)
-          if (filters.startDate) params.append('start', filters.startDate)
-          if (filters.endDate) params.append('end', filters.endDate)
+        // Single API call for all pollutants
+        const params = new URLSearchParams({
+          pollutants: pollutants.join(','),
+          level: filters.level || 'SA2',
+        })
+        
+        if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
+        if (filters.codes) params.append('codes', filters.codes)
+        if (filters.start) params.append('start', filters.start)
+        if (filters.end) params.append('end', filters.end)
 
-          const response = await fetch(`/api/pollution?${params.toString()}`)
-          const result = await response.json()
-          
-          if (result.data) {
-            totalRecords += result.data.length
-          }
+        const response = await fetch(`/api/pollution?${params.toString()}`)
+        const result = await response.json()
+        
+        if (result.data) {
+          totalRecords = result.data.length
         }
         
         setLoadingProgress(prev => ({ ...prev, total: totalRecords }))
         
-        // Now fetch actual data with progress tracking
-        let currentRecords = 0
-        for (const pollutant of pollutants) {
+        // Use the data from the single API call
+        if (result.data) {
+          allData.push(...result.data)
           setLoadingProgress(prev => ({ 
             ...prev, 
-            currentPollutant: pollutant,
-            current: currentRecords 
+            current: result.data.length,
+            currentPollutant: pollutants.join(', ')
           }))
-          
-          const params = new URLSearchParams({
-            pollutant: pollutant,
-            level: filters.level || 'SA2',
-          })
-          
-          if (filters.state) params.append('state', filters.state)
-          if (filters.codes) params.append('codes', filters.codes)
-          if (filters.startDate) params.append('start', filters.startDate)
-          if (filters.endDate) params.append('end', filters.endDate)
-
-          const response = await fetch(`/api/pollution?${params.toString()}`)
-          const result = await response.json()
-          
-          if (result.data) {
-            allData.push(...result.data)
-            currentRecords += result.data.length
-            setLoadingProgress(prev => ({ ...prev, current: currentRecords }))
-          }
         }
         
         setData(allData)
@@ -148,6 +129,7 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
     map.on('load', () => {
       setReady(true)
       console.log('Map loaded and ready')
+      onMapReady?.(map)
     })
 
     return () => map.remove()

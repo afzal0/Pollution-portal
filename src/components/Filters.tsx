@@ -1,88 +1,307 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dayjs from 'dayjs'
+import { Download, MapPin, Upload, Edit3, X } from 'lucide-react'
 
 export type FiltersState = {
-	pollutant: string
-	state?: string
-	level: 'SA2' | 'SA3' | 'SA4'
-	codes: string
-	start?: string
-	end?: string
+  pollutants: string[]
+  states: string[]
+  level: 'SA2' | 'SA3' | 'SA4'
+  codes: string
+  start?: string
+  end?: string
+  polygon?: number[][]
+  customArea?: 'none' | 'polygon' | 'shapefile' | 'coordinates'
 }
 
-export default function Filters({ onChange }: { onChange: (f: FiltersState) => void }) {
-	const [filters, setFilters] = useState<FiltersState>({
-		pollutant: 'SO2',
-		level: 'SA2',
-		codes: ''
-	})
+interface FiltersProps {
+  onChange: (f: FiltersState) => void
+  onPolygonDraw?: () => void
+  onShapefileUpload?: () => void
+  onCoordinateInput?: () => void
+}
 
-	function update<K extends keyof FiltersState>(key: K, value: FiltersState[K]) {
-		const next = { ...filters, [key]: value }
-		setFilters(next)
-		onChange(next)
-	}
+export default function Filters({ 
+  onChange, 
+  onPolygonDraw, 
+  onShapefileUpload, 
+  onCoordinateInput 
+}: FiltersProps) {
+  const [filters, setFilters] = useState<FiltersState>({
+    pollutants: ['AER_AI'],
+    states: [],
+    level: 'SA2',
+    codes: '',
+    customArea: 'none'
+  })
 
-	const queryString = new URLSearchParams({
-		level: filters.level,
-		pollutant: filters.pollutant,
-		...(filters.state ? { state: filters.state } : {}),
-		...(filters.codes ? { codes: filters.codes } : {}),
-		...(filters.start ? { start: filters.start } : {}),
-		...(filters.end ? { end: filters.end } : {}),
-		format: 'csv'
-	}).toString()
+  const [availablePollutants, setAvailablePollutants] = useState<string[]>([])
+  const [availableStates, setAvailableStates] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
 
-	const downloadUrl = `/api/pollution?${queryString}`
+  // Fetch available pollutants and states
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Fetch pollutants
+        const pollutantsResponse = await fetch(`/api/pollutants?level=${filters.level}`)
+        const pollutantsData = await pollutantsResponse.json()
+        if (pollutantsData.success) {
+          setAvailablePollutants(pollutantsData.data)
+        }
 
-	return (
-		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-			<div>
-				<label className="block text-sm text-gray-600 mb-1">Pollutant</label>
-				<select className="w-full border rounded-md px-2 py-2" value={filters.pollutant}
-					onChange={e => update('pollutant', e.target.value)}>
-					<option>SO2</option>
-					<option>NO2</option>
-					<option>PM2.5</option>
-					<option>PM10</option>
-				</select>
-			</div>
-			<div>
-				<label className="block text-sm text-gray-600 mb-1">State (STE_NAME)</label>
-				<input className="w-full border rounded-md px-2 py-2" placeholder="Western Australia"
-					value={filters.state || ''} onChange={e => update('state', e.target.value)} />
-			</div>
-			<div>
-				<label className="block text-sm text-gray-600 mb-1">Level</label>
-				<select className="w-full border rounded-md px-2 py-2" value={filters.level}
-					onChange={e => update('level', e.target.value as any)}>
-					<option value="SA2">SA2</option>
-					<option value="SA3">SA3</option>
-					<option value="SA4">SA4</option>
-				</select>
-			</div>
-			<div className="sm:col-span-2">
-				<label className="block text-sm text-gray-600 mb-1">Codes (comma separated)</label>
-				<input className="w-full border rounded-md px-2 py-2" placeholder="511041292, ..."
-					value={filters.codes} onChange={e => update('codes', e.target.value)} />
-			</div>
-			<div>
-				<label className="block text-sm text-gray-600 mb-1">Start date</label>
-				<input type="date" className="w-full border rounded-md px-2 py-2"
-					value={filters.start || ''} onChange={e => update('start', e.target.value)} />
-			</div>
-			<div>
-				<label className="block text-sm text-gray-600 mb-1">End date</label>
-				<input type="date" className="w-full border rounded-md px-2 py-2"
-					value={filters.end || ''} onChange={e => update('end', e.target.value)} />
-			</div>
-			<div className="flex items-end">
-				<a href={downloadUrl} className="inline-flex items-center justify-center px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800">
-					Download CSV
-				</a>
-			</div>
-		</div>
-	)
+        // Fetch states
+        const statesResponse = await fetch(`/api/states?level=${filters.level}`)
+        const statesData = await statesResponse.json()
+        if (statesData.success) {
+          setAvailableStates(statesData.data)
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [filters.level])
+
+  function update<K extends keyof FiltersState>(key: K, value: FiltersState[K]) {
+    const next = { ...filters, [key]: value }
+    setFilters(next)
+    onChange(next)
+  }
+
+  const handlePollutantChange = (pollutant: string, checked: boolean) => {
+    if (checked) {
+      update('pollutants', [...filters.pollutants, pollutant])
+    } else {
+      update('pollutants', filters.pollutants.filter(p => p !== pollutant))
+    }
+  }
+
+  const handleStateChange = (state: string, checked: boolean) => {
+    if (checked) {
+      update('states', [...filters.states, state])
+    } else {
+      update('states', filters.states.filter(s => s !== state))
+    }
+  }
+
+  const clearPolygon = () => {
+    update('polygon', undefined)
+    update('customArea', 'none')
+  }
+
+  const queryString = new URLSearchParams({
+    level: filters.level,
+    pollutants: filters.pollutants.join(','),
+    ...(filters.states.length > 0 ? { states: filters.states.join(',') } : {}),
+    ...(filters.codes ? { codes: filters.codes } : {}),
+    ...(filters.start ? { start: filters.start } : {}),
+    ...(filters.end ? { end: filters.end } : {}),
+    format: 'csv'
+  }).toString()
+
+  const downloadUrl = `/api/pollution?${queryString}`
+
+  return (
+    <div className="space-y-4">
+      {/* Pollutant Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Pollutants ({filters.pollutants.length} selected)
+        </label>
+        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
+          {loading ? (
+            <div className="col-span-2 text-sm text-gray-500">Loading pollutants...</div>
+          ) : (
+            availablePollutants.map(pollutant => (
+              <label key={pollutant} className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filters.pollutants.includes(pollutant)}
+                  onChange={(e) => handlePollutantChange(pollutant, e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-gray-700">{pollutant}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* State Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          States ({filters.states.length} selected)
+        </label>
+        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
+          {loading ? (
+            <div className="text-sm text-gray-500">Loading states...</div>
+          ) : (
+            availableStates.map(state => (
+              <label key={state} className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filters.states.includes(state)}
+                  onChange={(e) => handleStateChange(state, e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-gray-700">{state}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Level Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Geographic Level</label>
+        <select 
+          className="w-full border rounded-md px-3 py-2" 
+          value={filters.level}
+          onChange={e => update('level', e.target.value as 'SA2' | 'SA3' | 'SA4')}
+        >
+          <option value="SA2">SA2 (Statistical Area Level 2)</option>
+          <option value="SA3">SA3 (Statistical Area Level 3)</option>
+          <option value="SA4">SA4 (Statistical Area Level 4)</option>
+        </select>
+      </div>
+
+      {/* Custom Area Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Custom Area Filter</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onPolygonDraw?.()}
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+              filters.customArea === 'polygon' 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            Draw Polygon
+          </button>
+          <button
+            onClick={() => onShapefileUpload?.()}
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+              filters.customArea === 'shapefile' 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+            Upload Shapefile
+          </button>
+          <button
+            onClick={() => onCoordinateInput?.()}
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+              filters.customArea === 'coordinates' 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Edit3 className="w-4 h-4" />
+            Enter Coordinates
+          </button>
+          <button
+            onClick={clearPolygon}
+            className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          >
+            <X className="w-4 h-4" />
+            Clear Area
+          </button>
+        </div>
+        {filters.polygon && (
+          <div className="mt-2 p-2 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-700">
+              Custom polygon active ({filters.polygon.length} points)
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Codes Input */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          SA Codes (comma separated)
+        </label>
+        <input 
+          className="w-full border rounded-md px-3 py-2" 
+          placeholder="e.g., 511041292, 511041293"
+          value={filters.codes} 
+          onChange={e => update('codes', e.target.value)} 
+        />
+      </div>
+
+      {/* Date Range */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <input 
+            type="date" 
+            className="w-full border rounded-md px-3 py-2"
+            value={filters.start || ''} 
+            onChange={e => update('start', e.target.value)} 
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <input 
+            type="date" 
+            className="w-full border rounded-md px-3 py-2"
+            value={filters.end || ''} 
+            onChange={e => update('end', e.target.value)} 
+          />
+        </div>
+      </div>
+
+      {/* Quick Date Presets */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Quick Date Ranges</label>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'Last 7 days', days: 7 },
+            { label: 'Last 30 days', days: 30 },
+            { label: 'Last 90 days', days: 90 },
+            { label: 'Last year', days: 365 },
+            { label: 'All time', days: null }
+          ].map(preset => (
+            <button
+              key={preset.label}
+              onClick={() => {
+                if (preset.days === null) {
+                  update('start', '')
+                  update('end', '')
+                } else {
+                  const end = dayjs().format('YYYY-MM-DD')
+                  const start = dayjs().subtract(preset.days, 'day').format('YYYY-MM-DD')
+                  update('start', start)
+                  update('end', end)
+                }
+              }}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Download Button */}
+      <div className="pt-2">
+        <a 
+          href={downloadUrl} 
+          className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Download CSV
+        </a>
+      </div>
+    </div>
+  )
 }

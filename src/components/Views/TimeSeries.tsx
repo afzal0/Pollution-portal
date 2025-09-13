@@ -47,56 +47,28 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
       const allData: any[] = []
       const pollutants = filters.pollutants || [filters.pollutant || 'AER_AI']
       
-      // First, get total count for progress tracking
-      let totalRecords = 0
-      for (const pollutant of pollutants) {
-        const params = new URLSearchParams({
-          pollutant: pollutant,
-          level: filters.level || 'SA2',
-        })
-        
-        if (filters.state) params.append('state', filters.state)
-        if (filters.codes) params.append('codes', filters.codes)
-        if (filters.startDate) params.append('start', filters.startDate)
-        if (filters.endDate) params.append('end', filters.endDate)
+      // Single API call for all pollutants
+      const params = new URLSearchParams({
+        pollutants: pollutants.join(','),
+        level: filters.level || 'SA2',
+      })
+      
+      if (filters.states && filters.states.length > 0) params.append('states', filters.states.join(','))
+      if (filters.codes) params.append('codes', filters.codes)
+      if (filters.start) params.append('start', filters.start)
+      if (filters.end) params.append('end', filters.end)
 
-        const response = await fetch(`/api/pollution?${params.toString()}`)
-        const result = await response.json()
-        
-        if (result.data) {
-          totalRecords += result.data.length
-        }
-      }
+      const response = await fetch(`/api/pollution?${params.toString()}`)
+      const result = await response.json()
       
-      setLoadingProgress(prev => ({ ...prev, total: totalRecords }))
-      
-      // Now fetch actual data with progress tracking
-      let currentRecords = 0
-      for (const pollutant of pollutants) {
+      if (result.data) {
+        allData.push(...result.data)
         setLoadingProgress(prev => ({ 
           ...prev, 
-          currentPollutant: pollutant,
-          current: currentRecords 
+          total: result.data.length,
+          current: result.data.length,
+          currentPollutant: pollutants.join(', ')
         }))
-        
-        const params = new URLSearchParams({
-          pollutant: pollutant,
-          level: filters.level || 'SA2',
-        })
-        
-        if (filters.state) params.append('state', filters.state)
-        if (filters.codes) params.append('codes', filters.codes)
-        if (filters.startDate) params.append('start', filters.startDate)
-        if (filters.endDate) params.append('end', filters.endDate)
-
-        const response = await fetch(`/api/pollution?${params.toString()}`)
-        const result = await response.json()
-        
-        if (result.data) {
-          allData.push(...result.data)
-          currentRecords += result.data.length
-          setLoadingProgress(prev => ({ ...prev, current: currentRecords }))
-        }
       }
       
       // Process data for time series

@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
 	const { searchParams } = new URL(req.url)
 	const level = (searchParams.get('level') || 'SA2').toUpperCase() as 'SA2' | 'SA3' | 'SA4'
-	const pollutant = searchParams.get('pollutant') || 'SO2'
-	const state = searchParams.get('state') || undefined
+	const pollutants = searchParams.get('pollutants')?.split(',').filter(Boolean) || [searchParams.get('pollutant') || 'AER_AI']
+	const states = searchParams.get('states')?.split(',').filter(Boolean) || (searchParams.get('state') ? [searchParams.get('state')!] : [])
 	const saCodes = searchParams.get('codes')?.split(',').filter(Boolean)
 	const start = searchParams.get('start') || undefined
 	const end = searchParams.get('end') || undefined
@@ -19,22 +19,39 @@ export async function GET(req: NextRequest) {
 	let endDate = end ? dayjs(end).format('YYYY-MM-DD') : undefined
 
 	const table = level === 'SA2' ? 'pollution_daily' : level === 'SA3' ? 'pollution_daily_sa3' : 'pollution_daily_sa4'
-	const whereClauses: string[] = ['pollutant = $1']
-	const params: any[] = [pollutant]
+	const whereClauses: string[] = ['pollutant = ANY($1)']
+	const params: any[] = [pollutants]
 	let idx = params.length
-	if (state) { whereClauses.push(`ste_name = $${++idx}`); params.push(state) }
+	
+	if (states.length > 0) { 
+		whereClauses.push(`ste_name = ANY($${++idx})`); 
+		params.push(states) 
+	}
+	
 	if (saCodes && saCodes.length > 0) {
 		const column = level === 'SA2' ? 'sa2_code' : level === 'SA3' ? 'sa3_code' : 'sa4_code'
-		whereClauses.push(`${column} = ANY($${++idx})`); params.push(saCodes)
+		whereClauses.push(`${column} = ANY($${++idx})`); 
+		params.push(saCodes)
 	}
-	if (startDate) { whereClauses.push(`date >= $${++idx}`); params.push(startDate) }
-	if (endDate) { whereClauses.push(`date <= $${++idx}`); params.push(endDate) }
+	
+	if (startDate) { 
+		whereClauses.push(`date >= $${++idx}`); 
+		params.push(startDate) 
+	}
+	
+	if (endDate) { 
+		whereClauses.push(`date <= $${++idx}`); 
+		params.push(endDate) 
+	}
 
-	// If no explicit date range provided, default to the latest full month for this pollutant (and optional state)
+	// If no explicit date range provided, default to the latest full month for these pollutants (and optional states)
 	if (!startDate && !endDate) {
-		let latestWhere = 'pollutant = $1'
-		const latestParams: any[] = [pollutant]
-		if (state) { latestWhere += ` AND ste_name = $2`; latestParams.push(state) }
+		let latestWhere = 'pollutant = ANY($1)'
+		const latestParams: any[] = [pollutants]
+		if (states.length > 0) { 
+			latestWhere += ` AND ste_name = ANY($2)`; 
+			latestParams.push(states) 
+		}
 		const latestSql = `SELECT MAX(date) as latest_date FROM pollution_daily WHERE ${latestWhere}`
 		const { rows: latestRows } = await herokuQuery(latestSql, latestParams)
 		const latestDateVal = latestRows?.[0]?.latest_date ? dayjs(latestRows[0].latest_date) : undefined

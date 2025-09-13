@@ -6,7 +6,11 @@ import Sidebar from '@/components/Layout/Sidebar'
 import EnhancedMapView from '@/components/Views/EnhancedMapView'
 import DataTable from '@/components/Views/DataTable'
 import TimeSeries from '@/components/Views/TimeSeries'
+import PolygonDrawer from '@/components/PolygonDrawer'
+import ShapefileUploader from '@/components/ShapefileUploader'
+import CoordinateInput from '@/components/CoordinateInput'
 import { Map, Table, LineChart, BarChart3, GitCompare, Menu, X } from 'lucide-react'
+import { FiltersState } from '@/components/Filters'
 
 const TABS = [
   { id: 'map', label: 'Map View', icon: Map },
@@ -20,35 +24,44 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('map')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const [filters, setFilters] = useState({
-    pollutant: 'AER_AI',
-    pollutants: ['AER_AI', 'AER_LH', 'CO', 'HCHO'],
+  const [filters, setFilters] = useState<FiltersState>({
+    pollutants: ['AER_AI'],
+    states: [],
     level: 'SA2',
     codes: '',
-    state: undefined,
-    startDate: '',
-    endDate: '',
+    customArea: 'none'
   })
+  const [mapRef, setMapRef] = useState<any>(null)
+  const [showPolygonDrawer, setShowPolygonDrawer] = useState(false)
+  const [showShapefileUploader, setShowShapefileUploader] = useState(false)
+  const [showCoordinateInput, setShowCoordinateInput] = useState(false)
 
-  const handleDownload = async () => {
-    const params = new URLSearchParams({
-      pollutant: filters.pollutant,
-      level: filters.level,
-      format: 'csv',
-    })
-    
-    if (filters.state) params.append('state', filters.state)
-    if (filters.codes) params.append('codes', filters.codes)
-    if (filters.startDate) params.append('start', filters.startDate)
-    if (filters.endDate) params.append('end', filters.endDate)
+  const handlePolygonComplete = (coordinates: number[][]) => {
+    setFilters(prev => ({
+      ...prev,
+      polygon: coordinates,
+      customArea: 'polygon'
+    }))
+    setShowPolygonDrawer(false)
+  }
 
-    const response = await fetch(`/api/pollution?${params.toString()}`)
-    const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `pollution_data_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
+  const handleCoordinateSubmit = (coordinates: number[][]) => {
+    setFilters(prev => ({
+      ...prev,
+      polygon: coordinates,
+      customArea: 'coordinates'
+    }))
+    setShowCoordinateInput(false)
+  }
+
+  const handleShapefileUpload = (geojson: any) => {
+    // Process shapefile and set polygon
+    setFilters(prev => ({
+      ...prev,
+      polygon: geojson.coordinates[0], // Extract first polygon from shapefile
+      customArea: 'shapefile'
+    }))
+    setShowShapefileUploader(false)
   }
 
   return (
@@ -62,7 +75,9 @@ export default function Home() {
           <Sidebar 
             filters={filters} 
             onFiltersChange={setFilters}
-            onDownload={handleDownload}
+            onPolygonDraw={() => setShowPolygonDrawer(true)}
+            onShapefileUpload={() => setShowShapefileUploader(true)}
+            onCoordinateInput={() => setShowCoordinateInput(true)}
           />
         </div>
 
@@ -80,7 +95,9 @@ export default function Home() {
               <Sidebar 
                 filters={filters} 
                 onFiltersChange={setFilters}
-                onDownload={handleDownload}
+                onPolygonDraw={() => setShowPolygonDrawer(true)}
+                onShapefileUpload={() => setShowShapefileUploader(true)}
+                onCoordinateInput={() => setShowCoordinateInput(true)}
               />
             </div>
           </div>
@@ -143,9 +160,40 @@ export default function Home() {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 p-6 overflow-auto relative">
             {activeTab === 'map' && (
-              <EnhancedMapView filters={filters} />
+              <>
+                <EnhancedMapView 
+                  filters={filters} 
+                  onMapReady={setMapRef}
+                />
+                
+                {/* Polygon Drawing Tools */}
+                {showPolygonDrawer && (
+                  <PolygonDrawer
+                    map={mapRef}
+                    onPolygonComplete={handlePolygonComplete}
+                    onCancel={() => setShowPolygonDrawer(false)}
+                    isActive={showPolygonDrawer}
+                  />
+                )}
+                
+                {showShapefileUploader && (
+                  <ShapefileUploader
+                    onShapefileUpload={handleShapefileUpload}
+                    onCancel={() => setShowShapefileUploader(false)}
+                    isActive={showShapefileUploader}
+                  />
+                )}
+                
+                {showCoordinateInput && (
+                  <CoordinateInput
+                    onCoordinatesSubmit={handleCoordinateSubmit}
+                    onCancel={() => setShowCoordinateInput(false)}
+                    isActive={showCoordinateInput}
+                  />
+                )}
+              </>
             )}
             
             {activeTab === 'data' && (
