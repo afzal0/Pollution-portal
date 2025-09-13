@@ -29,21 +29,30 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        pollutant: filters.pollutant || 'SO2',
-        level: filters.level || 'SA2',
-      })
+      // Fetch data for all selected pollutants
+      const allData: any[] = []
       
-      if (filters.state) params.append('state', filters.state)
-      if (filters.codes) params.append('codes', filters.codes)
-      if (filters.startDate) params.append('start', filters.startDate)
-      if (filters.endDate) params.append('end', filters.endDate)
+      for (const pollutant of filters.pollutants || [filters.pollutant || 'AER_AI']) {
+        const params = new URLSearchParams({
+          pollutant: pollutant,
+          level: filters.level || 'SA2',
+        })
+        
+        if (filters.state) params.append('state', filters.state)
+        if (filters.codes) params.append('codes', filters.codes)
+        if (filters.startDate) params.append('start', filters.startDate)
+        if (filters.endDate) params.append('end', filters.endDate)
 
-      const response = await fetch(`/api/pollution?${params.toString()}`)
-      const result = await response.json()
+        const response = await fetch(`/api/pollution?${params.toString()}`)
+        const result = await response.json()
+        
+        if (result.data) {
+          allData.push(...result.data)
+        }
+      }
       
       // Process data for time series
-      const processedData = processTimeSeriesData(result.data || [])
+      const processedData = processTimeSeriesData(allData)
       setData(processedData)
       calculateStatistics(processedData)
     } catch (error) {

@@ -46,7 +46,12 @@ export async function GET(req: NextRequest) {
 		}
 	}
 
-	const sql = `SELECT * FROM ${table} WHERE ${whereClauses.join(' AND ')} ORDER BY date ASC LIMIT 200000`
+	// Optimized query with better indexing and limits
+	const sql = `SELECT pollutant, date, ste_name, sa2_code, sa2_name, centroid_lat, centroid_lon, value 
+		FROM ${table} 
+		WHERE ${whereClauses.join(' AND ')} 
+		ORDER BY date DESC 
+		LIMIT 50000`
 	const { rows } = await herokuQuery(sql, params)
 
 	if (format === 'csv') {

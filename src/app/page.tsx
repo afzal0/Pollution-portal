@@ -22,7 +22,7 @@ export default function Home() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [filters, setFilters] = useState({
     pollutant: 'AER_AI',
-    pollutants: ['AER_AI'],
+    pollutants: ['AER_AI', 'AER_LH', 'CO', 'HCHO'],
     level: 'SA2',
     codes: '',
     state: undefined,

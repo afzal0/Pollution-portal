@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { LngLatBoundsLike, Map } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { Layers, Palette, MapPin, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
-import { COLOR_SCALES, MAP_STYLES } from '@/lib/constants'
+import { COLOR_SCALES, MAP_STYLES, POLLUTANTS } from '@/lib/constants'
 
 interface EnhancedMapViewProps {
   filters: any
@@ -26,19 +26,29 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
 
       setLoading(true)
       try {
-        const params = new URLSearchParams({
-          pollutant: filters.pollutant || 'SO2',
-          level: filters.level || 'SA2',
-        })
+        // Fetch data for all selected pollutants
+        const allData: any[] = []
         
-        if (filters.state) params.append('state', filters.state)
-        if (filters.codes) params.append('codes', filters.codes)
-        if (filters.startDate) params.append('start', filters.startDate)
-        if (filters.endDate) params.append('end', filters.endDate)
+        for (const pollutant of filters.pollutants || [filters.pollutant || 'AER_AI']) {
+          const params = new URLSearchParams({
+            pollutant: pollutant,
+            level: filters.level || 'SA2',
+          })
+          
+          if (filters.state) params.append('state', filters.state)
+          if (filters.codes) params.append('codes', filters.codes)
+          if (filters.startDate) params.append('start', filters.startDate)
+          if (filters.endDate) params.append('end', filters.endDate)
 
-        const response = await fetch(`/api/pollution?${params.toString()}`)
-        const result = await response.json()
-        setData(result.data || [])
+          const response = await fetch(`/api/pollution?${params.toString()}`)
+          const result = await response.json()
+          
+          if (result.data) {
+            allData.push(...result.data)
+          }
+        }
+        
+        setData(allData)
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -115,7 +125,12 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
       if (map.getLayer('pollution-cluster-count')) map.removeLayer('pollution-cluster-count')
       if (map.getSource('pollution-data')) map.removeSource('pollution-data')
 
-      if (geojson.features.length === 0) return
+      if (geojson.features.length === 0) {
+        console.log('No data to display on map')
+        return
+      }
+
+      console.log(`Adding ${geojson.features.length} features to map`)
 
       // Add source
       map.addSource('pollution-data', {
@@ -137,7 +152,9 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
               'interpolate',
               ['linear'],
               ['get', 'value'],
-              0, 0,
+              -2, 0,
+              0, 0.2,
+              2, 0.6,
               4, 1
             ],
             'heatmap-intensity': {
@@ -226,17 +243,21 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
           }
         })
       } else {
-        // Points visualization
+        // Points visualization with pollutant-based colors
         map.addLayer({
           id: 'pollution-circles',
           type: 'circle',
           source: 'pollution-data',
           paint: {
             'circle-color': [
-              'interpolate',
-              ['linear'],
-              ['get', 'value'],
-              ...COLOR_SCALES.pollution.flatMap(s => [s.value, s.color])
+              'case',
+              ['==', ['get', 'pollutant'], 'AER_AI'], '#facc15',
+              ['==', ['get', 'pollutant'], 'AER_LH'], '#f87171',
+              ['==', ['get', 'pollutant'], 'CO'], '#a3a3a3',
+              ['==', ['get', 'pollutant'], 'HCHO'], '#c084fc',
+              ['==', ['get', 'pollutant'], 'CLOUD'], '#38bdf8',
+              ['==', ['get', 'pollutant'], 'O3_TCL'], '#4ade80',
+              '#666666' // default color
             ],
             'circle-radius': [
               'interpolate',
@@ -364,17 +385,24 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
       {/* Legend */}
       {showLegend && visualization === 'points' && (
         <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">Pollution Level</h4>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Pollutants</h4>
           <div className="space-y-1">
-            {COLOR_SCALES.pollution.map(scale => (
-              <div key={scale.value} className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: scale.color }}
-                />
-                <span className="text-xs text-gray-600">{scale.label}</span>
-              </div>
-            ))}
+            {filters.pollutants?.map(pollutant => {
+              const pollutantInfo = POLLUTANTS.find(p => p.value === pollutant)
+              return (
+                <div key={pollutant} className="flex items-center gap-2">
+                  <div 
+                    className="w-4 h-4 rounded-full"
+                    style={{ 
+                      backgroundColor: pollutantInfo?.color || '#666666'
+                    }}
+                  />
+                  <span className="text-xs text-gray-600">
+                    {pollutantInfo?.label || pollutant}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

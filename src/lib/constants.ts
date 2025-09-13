@@ -75,14 +75,17 @@ export const COLORS = {
 }
 
 export const POLLUTANTS = [
-  { value: 'SO2', label: 'Sulfur Dioxide (SO₂)', color: '#facc15' },
-  { value: 'NO2', label: 'Nitrogen Dioxide (NO₂)', color: '#f87171' },
+  { value: 'AER_AI', label: 'Aerosol Index (AER_AI)', color: '#facc15' },
+  { value: 'AER_LH', label: 'Aerosol Layer Height (AER_LH)', color: '#f87171' },
+  { value: 'CLOUD', label: 'Cloud Coverage (CLOUD)', color: '#38bdf8' },
   { value: 'CO', label: 'Carbon Monoxide (CO)', color: '#a3a3a3' },
-  { value: 'O3', label: 'Ozone (O₃)', color: '#38bdf8' },
-  { value: 'CH4', label: 'Methane (CH₄)', color: '#4ade80' },
   { value: 'HCHO', label: 'Formaldehyde (HCHO)', color: '#c084fc' },
-  { value: 'PM2.5', label: 'Fine Particles (PM2.5)', color: '#fb923c' },
-  { value: 'PM10', label: 'Coarse Particles (PM10)', color: '#a78bfa' },
+  { value: 'O3_TCL', label: 'Ozone Total Column (O3_TCL)', color: '#4ade80' },
+  // Legacy pollutants for compatibility
+  { value: 'SO2', label: 'Sulfur Dioxide (SO₂)', color: '#fb923c' },
+  { value: 'NO2', label: 'Nitrogen Dioxide (NO₂)', color: '#a78bfa' },
+  { value: 'O3', label: 'Ozone (O₃)', color: '#22c55e' },
+  { value: 'CH4', label: 'Methane (CH₄)', color: '#8b5cf6' },
 ]
 
 export const STATES = [
