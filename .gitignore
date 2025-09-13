@@ -47,6 +47,9 @@ Thumbs.db
 
 # Database credentials and sensitive files
 supabase/migrations/pass.txt
+supabase/migrations/*pass*
+supabase/migrations/*cred*
+supabase/migrations/*secret*
 *.env
 .env.*
 
