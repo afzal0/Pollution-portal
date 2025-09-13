@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Calendar, TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { POLLUTANTS } from '@/lib/constants'
 import dayjs from 'dayjs'
+import LoadingBar from '@/components/LoadingBar'
 
 interface TimeSeriesProps {
   filters: any
@@ -21,6 +22,12 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
     min: 0,
     trend: 0,
   })
+  const [loadingProgress, setLoadingProgress] = useState({
+    current: 0,
+    total: 0,
+    currentPollutant: '',
+    isLoading: false
+  })
 
   useEffect(() => {
     fetchData()
@@ -28,11 +35,50 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
 
   const fetchData = async () => {
     setLoading(true)
+    setLoadingProgress({
+      current: 0,
+      total: 0,
+      currentPollutant: '',
+      isLoading: true
+    })
+    
     try {
       // Fetch data for all selected pollutants
       const allData: any[] = []
+      const pollutants = filters.pollutants || [filters.pollutant || 'AER_AI']
       
-      for (const pollutant of filters.pollutants || [filters.pollutant || 'AER_AI']) {
+      // First, get total count for progress tracking
+      let totalRecords = 0
+      for (const pollutant of pollutants) {
+        const params = new URLSearchParams({
+          pollutant: pollutant,
+          level: filters.level || 'SA2',
+        })
+        
+        if (filters.state) params.append('state', filters.state)
+        if (filters.codes) params.append('codes', filters.codes)
+        if (filters.startDate) params.append('start', filters.startDate)
+        if (filters.endDate) params.append('end', filters.endDate)
+
+        const response = await fetch(`/api/pollution?${params.toString()}`)
+        const result = await response.json()
+        
+        if (result.data) {
+          totalRecords += result.data.length
+        }
+      }
+      
+      setLoadingProgress(prev => ({ ...prev, total: totalRecords }))
+      
+      // Now fetch actual data with progress tracking
+      let currentRecords = 0
+      for (const pollutant of pollutants) {
+        setLoadingProgress(prev => ({ 
+          ...prev, 
+          currentPollutant: pollutant,
+          current: currentRecords 
+        }))
+        
         const params = new URLSearchParams({
           pollutant: pollutant,
           level: filters.level || 'SA2',
@@ -48,6 +94,8 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
         
         if (result.data) {
           allData.push(...result.data)
+          currentRecords += result.data.length
+          setLoadingProgress(prev => ({ ...prev, current: currentRecords }))
         }
       }
       
@@ -59,6 +107,7 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
+      setLoadingProgress(prev => ({ ...prev, isLoading: false }))
     }
   }
 
@@ -150,6 +199,15 @@ export default function TimeSeries({ filters }: TimeSeriesProps) {
 
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow-sm">
+      {/* Loading Bar */}
+      <LoadingBar
+        isLoading={loadingProgress.isLoading}
+        current={loadingProgress.current}
+        total={loadingProgress.total}
+        currentPollutant={loadingProgress.currentPollutant}
+        message="Loading time series data..."
+      />
+      
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">

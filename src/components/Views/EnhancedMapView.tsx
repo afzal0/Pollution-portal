@@ -5,6 +5,7 @@ import maplibregl, { LngLatBoundsLike, Map } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { Layers, Palette, MapPin, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { COLOR_SCALES, MAP_STYLES, POLLUTANTS } from '@/lib/constants'
+import LoadingBar from '@/components/LoadingBar'
 
 interface EnhancedMapViewProps {
   filters: any
@@ -19,17 +20,62 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
   const [mapStyle, setMapStyle] = useState('light')
   const [showLegend, setShowLegend] = useState(true)
   const [visualization, setVisualization] = useState<'points' | 'heatmap' | 'clusters'>('points')
+  const [loadingProgress, setLoadingProgress] = useState({
+    current: 0,
+    total: 0,
+    currentPollutant: '',
+    isLoading: false
+  })
 
   useEffect(() => {
     async function fetchData() {
       if (!filters) return
 
       setLoading(true)
+      setLoadingProgress({
+        current: 0,
+        total: 0,
+        currentPollutant: '',
+        isLoading: true
+      })
+      
       try {
         // Fetch data for all selected pollutants
         const allData: any[] = []
+        const pollutants = filters.pollutants || [filters.pollutant || 'AER_AI']
         
-        for (const pollutant of filters.pollutants || [filters.pollutant || 'AER_AI']) {
+        // First, get total count for progress tracking
+        let totalRecords = 0
+        for (const pollutant of pollutants) {
+          const params = new URLSearchParams({
+            pollutant: pollutant,
+            level: filters.level || 'SA2',
+          })
+          
+          if (filters.state) params.append('state', filters.state)
+          if (filters.codes) params.append('codes', filters.codes)
+          if (filters.startDate) params.append('start', filters.startDate)
+          if (filters.endDate) params.append('end', filters.endDate)
+
+          const response = await fetch(`/api/pollution?${params.toString()}`)
+          const result = await response.json()
+          
+          if (result.data) {
+            totalRecords += result.data.length
+          }
+        }
+        
+        setLoadingProgress(prev => ({ ...prev, total: totalRecords }))
+        
+        // Now fetch actual data with progress tracking
+        let currentRecords = 0
+        for (const pollutant of pollutants) {
+          setLoadingProgress(prev => ({ 
+            ...prev, 
+            currentPollutant: pollutant,
+            current: currentRecords 
+          }))
+          
           const params = new URLSearchParams({
             pollutant: pollutant,
             level: filters.level || 'SA2',
@@ -45,6 +91,8 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
           
           if (result.data) {
             allData.push(...result.data)
+            currentRecords += result.data.length
+            setLoadingProgress(prev => ({ ...prev, current: currentRecords }))
           }
         }
         
@@ -53,6 +101,7 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
         console.error('Error fetching data:', error)
       } finally {
         setLoading(false)
+        setLoadingProgress(prev => ({ ...prev, isLoading: false }))
       }
     }
 
@@ -132,7 +181,7 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
 
     // Add layers based on visualization type
     if (visualization === 'heatmap') {
-      // Heatmap layer
+      // Heatmap layer - improved for smoother, more continuous visualization
       map.addLayer({
         id: 'pollution-heatmap',
         type: 'heatmap',
@@ -143,14 +192,20 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
             ['linear'],
             ['get', 'value'],
             -2, 0,
-            0, 0.2,
-            2, 0.6,
+            -1, 0.1,
+            0, 0.3,
+            1, 0.6,
+            2, 0.8,
+            3, 0.9,
             4, 1
           ],
           'heatmap-intensity': {
             stops: [
-              [11, 1],
-              [15, 3]
+              [8, 0.5],
+              [11, 1.5],
+              [13, 2.5],
+              [15, 3.5],
+              [17, 4]
             ]
           },
           'heatmap-color': [
@@ -158,19 +213,27 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
             ['linear'],
             ['heatmap-density'],
             0, 'rgba(33,102,172,0)',
-            0.2, 'rgb(103,169,207)',
-            0.4, 'rgb(209,229,240)',
-            0.6, 'rgb(253,219,199)',
-            0.8, 'rgb(239,138,98)',
-            1, 'rgb(178,24,43)'
+            0.1, 'rgba(103,169,207,0.3)',
+            0.2, 'rgba(103,169,207,0.6)',
+            0.3, 'rgba(209,229,240,0.8)',
+            0.4, 'rgba(209,229,240,0.9)',
+            0.5, 'rgba(253,219,199,0.9)',
+            0.6, 'rgba(253,219,199,1)',
+            0.7, 'rgba(239,138,98,0.9)',
+            0.8, 'rgba(239,138,98,1)',
+            0.9, 'rgba(178,24,43,0.9)',
+            1, 'rgba(178,24,43,1)'
           ],
           'heatmap-radius': {
             stops: [
-              [11, 15],
-              [15, 20]
+              [8, 20],
+              [11, 25],
+              [13, 30],
+              [15, 35],
+              [17, 40]
             ]
           },
-          'heatmap-opacity': 0.8
+          'heatmap-opacity': 0.9
         }
       })
     } else if (visualization === 'clusters') {
@@ -331,6 +394,15 @@ export default function EnhancedMapView({ filters }: EnhancedMapViewProps) {
 
   return (
     <div className="h-full relative bg-gray-100 rounded-lg overflow-hidden">
+      {/* Loading Bar */}
+      <LoadingBar
+        isLoading={loadingProgress.isLoading}
+        current={loadingProgress.current}
+        total={loadingProgress.total}
+        currentPollutant={loadingProgress.currentPollutant}
+        message="Loading map data..."
+      />
+      
       {/* Map Container */}
       <div ref={containerRef} className="w-full h-full" />
 
