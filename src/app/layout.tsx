@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Australia Pollution Portal",
-  description: "Comprehensive pollution data analysis platform for Australia using satellite data from Google Earth Engine and Copernicus",
+  title: "AUS-HEALTHSCAPE: Building a Spatiotemporal Repository of Environmental and Social Determinants Across Urban, Rural, and Remote Australia",
+  description: "Interactive environmental and health data visualization platform for Australia - AUS-HEALTHSCAPE",
 };
 
 export default function RootLayout({

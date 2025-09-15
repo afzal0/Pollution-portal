@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { ArrowLeft, ExternalLink, Mail, Github, Info, Shield, Database, Satellite, Users, Code } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Mail, Github, Info, Shield, Database, Satellite, Users, Code, BookOpen, Calendar, MapPin } from 'lucide-react'
 import Link from 'next/link'
 
 export default function About() {
@@ -9,7 +9,10 @@ export default function About() {
 
   const sections = [
     { id: 'overview', label: 'Overview', icon: Info },
+    { id: 'authors', label: 'Authors', icon: Users },
+    { id: 'research', label: 'Research', icon: BookOpen },
     { id: 'data', label: 'Data Sources', icon: Database },
+    { id: 'future', label: 'Future Updates', icon: Calendar },
     { id: 'usage', label: 'Usage & License', icon: Shield },
     { id: 'contact', label: 'Contact', icon: Mail },
     { id: 'contribute', label: 'Contribute', icon: Code }
@@ -30,11 +33,11 @@ export default function About() {
                 Back to Portal
               </Link>
               <div className="h-6 w-px bg-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">Australia Pollution Portal</h1>
+              <h1 className="text-xl font-semibold text-gray-900">AUS-HEALTHSCAPE</h1>
             </div>
             <div className="flex items-center gap-4">
               <a
-                href="https://github.com/afzalkhan0/pollution-portal"
+                href="https://github.com/afzal0/Pollution-portal"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -78,12 +81,17 @@ export default function About() {
               {activeSection === 'overview' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">About Australia Pollution Portal</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">About AUS-HEALTHSCAPE</h2>
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      AUS-HEALTHSCAPE is a comprehensive spatiotemporal repository designed to provide researchers, 
+                      scientists, and environmental professionals with access to environmental and social determinant 
+                      data across urban, rural, and remote Australia. This open-source project aims to democratize 
+                      access to environmental health data and support research initiatives focused on understanding 
+                      the complex relationships between environmental factors and public health outcomes.
+                    </p>
                     <p className="text-gray-600 leading-relaxed">
-                      The Australia Pollution Portal is a comprehensive data analysis platform designed to provide 
-                      researchers, scientists, and environmental professionals with access to satellite-derived 
-                      pollution data across Australia. This open-source project aims to democratize access to 
-                      environmental data and support research initiatives focused on air quality monitoring and analysis.
+                      The platform integrates satellite-derived pollution data, climate information, and social 
+                      determinants to create a unified repository for environmental health research across Australia.
                     </p>
                   </div>
 
@@ -91,22 +99,22 @@ export default function About() {
                     <div className="bg-blue-50 rounded-lg p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <Satellite className="w-6 h-6 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-blue-900">Satellite Data</h3>
+                        <h3 className="text-lg font-semibold text-blue-900">Satellite Data Integration</h3>
                       </div>
                       <p className="text-blue-800 text-sm">
-                        Utilizes high-resolution satellite imagery and atmospheric data to provide 
-                        comprehensive pollution monitoring across Australia.
+                        Utilizes high-resolution satellite imagery and atmospheric data from multiple sources 
+                        to provide comprehensive environmental monitoring across Australia.
                       </p>
                     </div>
 
                     <div className="bg-green-50 rounded-lg p-6">
                       <div className="flex items-center gap-3 mb-3">
-                        <Users className="w-6 h-6 text-green-600" />
-                        <h3 className="text-lg font-semibold text-green-900">Research Focus</h3>
+                        <MapPin className="w-6 h-6 text-green-600" />
+                        <h3 className="text-lg font-semibold text-green-900">Geographic Coverage</h3>
                       </div>
                       <p className="text-green-800 text-sm">
-                        Designed specifically for academic and research purposes to support 
-                        environmental studies and policy development.
+                        Comprehensive coverage across urban, rural, and remote areas of Australia with 
+                        multiple geographic aggregation levels (SA2, SA3, SA4).
                       </p>
                     </div>
                   </div>
@@ -116,25 +124,207 @@ export default function About() {
                     <ul className="space-y-2 text-gray-600">
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                        Interactive map visualization with multiple data layers
+                        Interactive map visualization with multiple data layers and visualization modes
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                        Time series analysis and trend monitoring
+                        Advanced time series analysis and trend monitoring capabilities
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                        Statistical analysis and data comparison tools
+                        Statistical analysis and data comparison tools for research
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                        Multiple data aggregation levels (daily, weekly, monthly, etc.)
+                        Multiple data aggregation levels (daily, weekly, monthly, quarterly, yearly, seasonal)
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                        Export capabilities for further analysis
+                        Custom area analysis with polygon drawing and shapefile upload
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                        Export capabilities for further analysis and research
                       </li>
                     </ul>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'authors' && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Research Team</h2>
+                    <p className="text-gray-600 leading-relaxed mb-6">
+                      AUS-HEALTHSCAPE is developed by a collaborative research team focused on environmental 
+                      health and spatial epidemiology across Australia.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Mohammad Afzal Khan</h3>
+                          <p className="text-gray-600 text-sm mb-3">
+                            Lead Developer & Research Associate
+                          </p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Github className="w-4 h-4 text-gray-500" />
+                              <a 
+                                href="https://github.com/afzal0"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                @afzal0
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-gray-500" />
+                              <a 
+                                href="mailto:fzlkhan0@gmail.com"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                fzlkhan0@gmail.com
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                          <Users className="w-8 h-8 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Oyelola Adegboye</h3>
+                          <p className="text-gray-600 text-sm mb-1">
+                            Associate Professor
+                          </p>
+                          <p className="text-gray-600 text-sm mb-3">
+                            Menzies School of Health Research<br />
+                            Charles Darwin University, NT, Australia
+                          </p>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Github className="w-4 h-4 text-gray-500" />
+                              <a 
+                                href="https://github.com/oyeadegboye"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                @oyeadegboye
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-gray-500" />
+                              <a 
+                                href="mailto:oyelola.adegboye@menzies.edu.au"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                oyelola.adegboye@menzies.edu.au
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-3">Research Focus</h3>
+                    <p className="text-blue-800 text-sm leading-relaxed">
+                      Our team specializes in spatial epidemiology, environmental health, and the development 
+                      of innovative data platforms for public health research. We focus on understanding the 
+                      complex relationships between environmental factors and health outcomes across diverse 
+                      Australian communities.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'research' && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Research Publications</h2>
+                    <p className="text-gray-600 leading-relaxed mb-6">
+                      The datasets and methodologies used in AUS-HEALTHSCAPE have been applied in several 
+                      research studies, contributing to the understanding of environmental health relationships 
+                      in Australia.
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <BookOpen className="w-5 h-5" />
+                        Related Research Projects
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        <div className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Salmonella Climate Risk Analysis</h4>
+                          <p className="text-gray-600 text-sm mb-3">
+                            Bayesian spatial modeling of climate-driven Salmonella risk in New South Wales, 
+                            Australia (1991–2022) using distributed lag non-linear models (DLNMs).
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Github className="w-4 h-4 text-gray-500" />
+                            <a 
+                              href="https://github.com/afzal0/Salmonella-data-repo"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1"
+                            >
+                              View Repository
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Influenza Spatial Analysis</h4>
+                          <p className="text-gray-600 text-sm mb-3">
+                            Distributed lag non-linear models (DLNMs) for influenza analysis in New South Wales, 
+                            examining the relationship between environmental factors and influenza incidence.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Github className="w-4 h-4 text-gray-500" />
+                            <a 
+                              href="https://github.com/afzal0/SB-DLNM-Influenza_NSW"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1"
+                            >
+                              View Repository
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-3">Current Research</h3>
+                      <p className="text-green-800 text-sm leading-relaxed mb-3">
+                        Our team is currently in the process of publishing a comprehensive paper that explains 
+                        the relevance, methodologies, and processes behind AUS-HEALTHSCAPE. This publication 
+                        will detail the technical implementation, data processing workflows, and research 
+                        applications of the platform.
+                      </p>
+                      <p className="text-green-800 text-sm leading-relaxed">
+                        The research demonstrates the platform's utility for environmental health research 
+                        and its potential for supporting evidence-based policy development across Australia.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -213,9 +403,74 @@ export default function About() {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3">Data Processing</h3>
                       <p className="text-blue-800 text-sm leading-relaxed">
-                        The pollution data is processed and aggregated at various geographic levels (SA2, SA3, SA4) 
-                        to provide comprehensive coverage across Australia. Data is updated regularly and includes 
-                        multiple pollutants such as AER_AI, AER_LH, CO, HCHO, CLOUD, and O3_TCL.
+                        The environmental data is processed and aggregated at various geographic levels (SA2, SA3, SA4) 
+                        to provide comprehensive coverage across Australia. Data includes multiple pollutants such as 
+                        AER_AI, AER_LH, CO, HCHO, CLOUD, and O3_TCL, with regular updates and quality assurance protocols.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'future' && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Future Updates & Roadmap</h2>
+                    <p className="text-gray-600 leading-relaxed mb-6">
+                      AUS-HEALTHSCAPE is continuously evolving to provide researchers with the most comprehensive 
+                      and up-to-date environmental health data platform for Australia.
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Calendar className="w-5 h-5" />
+                        Planned Enhancements
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-blue-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Near Real-Time Data Integration</h4>
+                          <p className="text-gray-600 text-sm">
+                            Integration of near real-time data from multiple sources to provide up-to-the-minute 
+                            environmental monitoring capabilities.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-green-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Enhanced Climate Data</h4>
+                          <p className="text-gray-600 text-sm">
+                            Updates to historical temperature data and integration of near real-time climatic 
+                            data from multiple meteorological sources.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-purple-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Multi-Source Data Integration</h4>
+                          <p className="text-gray-600 text-sm">
+                            Expansion to include data from additional environmental monitoring networks, 
+                            government agencies, and research institutions.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-orange-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Advanced Analytics</h4>
+                          <p className="text-gray-600 text-sm">
+                            Implementation of machine learning algorithms for predictive modeling and 
+                            automated anomaly detection in environmental data.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-3">Research Impact</h3>
+                      <p className="text-green-800 text-sm leading-relaxed">
+                        These future updates will significantly enhance the platform's research capabilities, 
+                        enabling more sophisticated environmental health studies and supporting evidence-based 
+                        policy development across Australia. The integration of real-time data will provide 
+                        researchers with unprecedented access to current environmental conditions and trends.
                       </p>
                     </div>
                   </div>
@@ -241,7 +496,7 @@ export default function About() {
                           </p>
                           <div className="bg-white border border-green-200 rounded p-3">
                             <p className="text-green-700 text-sm font-medium">
-                              Contact: Afzal Khan - fzlkhan0@gmail.com
+                              Contact: Mohammad Afzal Khan - fzlkhan0@gmail.com
                             </p>
                           </div>
                         </div>
@@ -295,12 +550,12 @@ export default function About() {
                     <div className="bg-white border border-gray-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <Mail className="w-5 h-5" />
-                        Developer Contact
+                        Lead Developer
                       </h3>
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm font-medium text-gray-700">Name</p>
-                          <p className="text-gray-900">Afzal Khan</p>
+                          <p className="text-gray-900">Mohammad Afzal Khan</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-700">Email</p>
@@ -312,9 +567,20 @@ export default function About() {
                           </a>
                         </div>
                         <div>
+                          <p className="text-sm font-medium text-gray-700">GitHub</p>
+                          <a 
+                            href="https://github.com/afzal0"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            @afzal0
+                          </a>
+                        </div>
+                        <div>
                           <p className="text-sm font-medium text-gray-700">Purpose</p>
                           <p className="text-gray-600 text-sm">
-                            For data removal requests, technical issues, or collaboration inquiries
+                            For technical issues, collaboration inquiries, or data removal requests
                           </p>
                         </div>
                       </div>
@@ -322,31 +588,41 @@ export default function About() {
 
                     <div className="bg-white border border-gray-200 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Github className="w-5 h-5" />
-                        Project Repository
+                        <Users className="w-5 h-5" />
+                        Research Lead
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm font-medium text-gray-700">GitHub Repository</p>
+                          <p className="text-sm font-medium text-gray-700">Name</p>
+                          <p className="text-gray-900">Oyelola Adegboye</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Title</p>
+                          <p className="text-gray-600 text-sm">Associate Professor</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Institution</p>
+                          <p className="text-gray-600 text-sm">Menzies School of Health Research<br />Charles Darwin University, NT, Australia</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Email</p>
                           <a 
-                            href="https://github.com/afzalkhan0/pollution-portal"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                            href="mailto:oyelola.adegboye@menzies.edu.au"
+                            className="text-blue-600 hover:text-blue-800"
                           >
-                            View on GitHub
-                            <ExternalLink className="w-4 h-4" />
+                            oyelola.adegboye@menzies.edu.au
                           </a>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-700">License</p>
-                          <p className="text-gray-600 text-sm">MIT License</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">Contributions</p>
-                          <p className="text-gray-600 text-sm">
-                            Pull requests and issues are welcome
-                          </p>
+                          <p className="text-sm font-medium text-gray-700">GitHub</p>
+                          <a 
+                            href="https://github.com/oyeadegboye"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            @oyeadegboye
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -356,7 +632,7 @@ export default function About() {
                     <h3 className="text-lg font-semibold text-yellow-900 mb-3">Data Removal Requests</h3>
                     <p className="text-yellow-800 text-sm leading-relaxed">
                       If you believe the publication of this data violates any rules or regulations, 
-                      please contact Afzal Khan immediately at fzlkhan0@gmail.com. We are committed 
+                      please contact Mohammad Afzal Khan immediately at fzlkhan0@gmail.com. We are committed 
                       to responsible data usage and will promptly address any concerns.
                     </p>
                   </div>
